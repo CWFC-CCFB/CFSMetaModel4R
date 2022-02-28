@@ -44,15 +44,19 @@ C4RCacheEnv <- new.env()
   CBRelease();
 }
 
-getServer <- function() {
-  if(exists("server", envir=C4RCacheEnv, inherits=FALSE)){
-    return(get("server", envir=C4RCacheEnv, inherits=FALSE))
+#' Gets the CAPSIS script API object through J4R
+#' @export
+getScript <- function() {
+  if(exists("script", envir=C4RCacheEnv, inherits=FALSE)){
+    return(get("script", envir=C4RCacheEnv, inherits=FALSE))
   }
   else {
     stop("Connection to server not established.  Please call CBInitialize() first.")
   }
 }
 
+#' Gets the MetaModelManager API object through J4R
+#' @export
 getMetaModelMgr <- function() {
   if(exists("metaModelMgr", envir=C4RCacheEnv, inherits=FALSE)){
     return(get("metaModelMgr", envir=C4RCacheEnv, inherits=FALSE))
@@ -66,8 +70,8 @@ getMetaModelMgr <- function() {
 #' @export
 CBRelease <- function() {
 
-  if (!is.null(getServer()))
-    rm(list = "server", envir = C4RCacheEnv)
+  if (!is.null(getScript()))
+    rm(list = "script", envir = C4RCacheEnv)
 
   if (!is.null(getMetaModelMgr()))
     rm(list = "metaModelMgr", envir = C4RCacheEnv)
@@ -84,14 +88,14 @@ CBRelease <- function() {
 #' @seealso CBRelease
 #' @export
 CBInitialize <- function(address, port, internalPort, key) {
-  if (exists("server", envir=C4RCacheEnv, inherits=FALSE) || exists("metaModelMgr", envir=C4RCacheEnv, inherits=FALSE))
+  if (exists("script", envir=C4RCacheEnv, inherits=FALSE) || exists("metaModelMgr", envir=C4RCacheEnv, inherits=FALSE))
     CBRelease()
 
   result <- J4R::connectToJava(host="192.168.1.11", port = port, internalPort = internalPort, public=T, key=key)
   if (result == FALSE)
     stop(paste("Could not initialize server at ", address, rep=""))
 
-  assign("server", J4R::createJavaObject("artemis.script.ArtScript"), envir = C4RCacheEnv, inherits = FALSE)
+  assign("script", J4R::createJavaObject("artemis.script.ArtScript"), envir = C4RCacheEnv, inherits = FALSE)
 
   assign("metaModelMgr", J4R::createJavaObject("repicea.simulation.metamodel.MetaModelManager"), envir = C4RCacheEnv, inherits = FALSE)
 }
@@ -100,9 +104,9 @@ CBInitialize <- function(address, port, internalPort, key) {
 #' @return List containing version numbers
 #' @export
 CBGetVersion <- function() {
-  server <- getServer()
+  script <- getScript()
 
-  ver = list("Capsis4R" = toString(packageVersion("Capsis4R")), "Capsis" = getServer()$getCapsisVersion())
+  ver = list("Capsis4R" = toString(packageVersion("Capsis4R")), "Capsis" = script$getCapsisVersion())
 
   return (ver)
 }
@@ -112,9 +116,9 @@ CBGetVersion <- function() {
 #' @seealso CBSetFieldMatches
 #' @export
 CBGetModelDataFields<- function() {
-  server <- getServer()
+  script <- getScript()
 
-  fields <- server$getFieldDescriptions()
+  fields <- script$getFieldDescriptions()
 
   values <- J4R::getAllValuesFromListObject(fields)
 
@@ -130,11 +134,11 @@ CBGetModelDataFields<- function() {
 #' @seealso CBRunSimulation
 #' @export
 CBSetInitialParameters <- function(initialDateYear, stochasticMode, numberOfRealizations, applicationScale, climateChangeOption) {
-  server <- getServer()
+  script <- getScript()
 
   applicationScaleEnum <- createJavaObject("repicea.simulation.ApplicationScaleProvider$ApplicationScale", applicationScale)
 
-  server$setInitialParameters(as.integer(initialDateYear), stochasticMode != 0, as.integer(numberOfRealizations), applicationScaleEnum, climateChangeOption)
+  script$setInitialParameters(as.integer(initialDateYear), stochasticMode != 0, as.integer(numberOfRealizations), applicationScaleEnum, climateChangeOption)
 }
 
 #' Sets evolution parameters.  Must be called prior to calling CBRunSimulation
@@ -142,9 +146,9 @@ CBSetInitialParameters <- function(initialDateYear, stochasticMode, numberOfReal
 #' @seealso CBRunSimulation
 #' @export
 CBSetEvolutionParameters <- function(finalDateYear) {
-  server <- getServer()
+  script <- getScript()
 
-  server$setEvolutionParameters(as.integer(finalDateYear))
+  script$setEvolutionParameters(as.integer(finalDateYear))
 }
 
 #' Gets the list of species of the specified type
@@ -152,7 +156,7 @@ CBSetEvolutionParameters <- function(finalDateYear) {
 #' @return a vector containing all the names of the species for all input types
 #' @export
 CBGetSpeciesOfType <- function(types) {
-  server <- getServer()
+  script <- getScript()
 
   speciesTypeArray <- J4R::createJavaObject("repicea.simulation.covariateproviders.treelevel.SpeciesTypeProvider$SpeciesType", length(as.vector(types)), isArray=TRUE)
 
@@ -160,7 +164,7 @@ CBGetSpeciesOfType <- function(types) {
 
   J4R::setValueInArray(speciesTypeArray, enums)
 
-  species <- server$getSpeciesOfType(speciesTypeArray)
+  species <- script$getSpeciesOfType(speciesTypeArray)
 
   return(species)
 }
@@ -170,9 +174,9 @@ CBGetSpeciesOfType <- function(types) {
 #' @param aggregationPatterns The aggregation patterns to register
 #' @export
 CBRegisterOutputRequest <- function(request, aggregationPatterns) {
-  server <- getServer()
+  script <- getScript()
 
-  server$registerOutputRequest(request, aggregationPatterns)
+  script$registerOutputRequest(request, aggregationPatterns)
 }
 
 #' Sets field matches for input data.  Must be called prior to calling CBSendData.
@@ -181,11 +185,11 @@ CBRegisterOutputRequest <- function(request, aggregationPatterns) {
 #' @seealso CBGetModelDataFields
 #' @export
 CBSetFieldMatches <- function(matches) {
-  server <- getServer()
+  script <- getScript()
 
   matchesJavaArray <- J4R::as.JavaArray(as.integer(matches))
 
-  result <- server$setFieldMatches(matchesJavaArray)
+  result <- script$setFieldMatches(matchesJavaArray)
 
   if (result != TRUE)
     stop("CBSetFieldMatches failed")
@@ -199,12 +203,12 @@ CBSetFieldMatches <- function(matches) {
 #'
 #' @export
 CBSendData <- function(data) {
-  server <- getServer()
+  script <- getScript()
 
   for(o in data) {
     tempArray <- J4R::createJavaObject("java.lang.Object", length(o), isArray = TRUE)
     J4R::setValueInArray(tempArray, o)
-    server$addRecord(tempArray)
+    script$addRecord(tempArray)
   }
 }
 
@@ -216,9 +220,9 @@ CBSendData <- function(data) {
 #'
 #' @export
 CBRunSimulation <- function() {
-  server <- getServer()
+  script <- getScript()
 
-  return (server$runSimulation())
+  return (script$runSimulation())
 }
 
 #' Closes the active project and frees its resources
@@ -227,9 +231,9 @@ CBRunSimulation <- function() {
 #'
 #' @export
 CBCloseProject <- function() {
-  server <- getServer()
+  script <- getScript()
 
-  server$closeProject()
+  script$closeProject()
 }
 
 #' Creates a new metamodel.  This must be called before MMAddSimulationResult calls

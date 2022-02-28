@@ -8,6 +8,7 @@ Copyright: Her Majesty the Queen in right of Canada
 Description: To be completed
 URL: https://sourceforge.net/projects/capsis4r/
 Imports:
+  ggplot2 (>= 3.3)
 License: GPL-3
 BugReports: https://sourceforge.net/p/capsis4r/tickets/
 Encoding: UTF-8
@@ -17,3 +18,4 @@ Suggests:
     testthat
 Depends:
   J4R (>= 1.1.1)
+  
