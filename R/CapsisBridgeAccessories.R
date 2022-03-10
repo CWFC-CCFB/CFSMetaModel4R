@@ -28,7 +28,7 @@
 #' @param title an optional string
 #'
 #' @export
-plotMetaModel <- function(javadataset, textsize = 20, plotPred = T, title = NULL) {
+plotMetaModel <- function(javadataset, textsize = 20, plotPred = T, title = NULL, predictions = NULL) {
   dataset <- convertDataSet(javadataset)
   dataset$lower95 <- dataset$Estimate - dataset$TotalVariance^.5 * qnorm(0.975)
   dataset[which(dataset$lower95 < 0), "lower95"] <- 0
@@ -72,6 +72,12 @@ plotMetaModel <- function(javadataset, textsize = 20, plotPred = T, title = NULL
     plot <- plot + ggplot2::geom_ribbon(ggplot2::aes(ymin=predL95, ymax=predU95, x=age), datasetPred, alpha = .5) +
       ggplot2::geom_line(ggplot2::aes(y=pred, x=age), datasetPred, lty = "solid", size = 1.5)
   }
+  if (!is.null(predictions)) {
+    predictions$predL95 <- predictions$predictions - predictions$predictionVariance^.5 * qnorm(0.975)
+    predictions$predU95 <- predictions$predictions + predictions$predictionVariance^.5 * qnorm(0.975)
+    plot <- plot + ggplot2::geom_ribbon(ggplot2::aes(ymin=predL95, ymax=predU95, x=ageYr), predictions, alpha = .5) +
+      ggplot2::geom_line(ggplot2::aes(y=predictions, x=ageYr), predictions, lty = "solid", size = 1.5)
+  }
   return(plot)
 }
 
@@ -97,5 +103,34 @@ convertDataSet <- function(dataSetObject) {
   class(dataFrame)<-c("metamodelResult", "data.frame")
 
   return(dataFrame)
+}
+
+#'
+#' Convert predictions returned by MMGetPredictions to an R dataframe
+#'
+#' @param pred the predictions returned by MMGetPredictions
+#' @param key string representing the key of the desired map inside (see MetaModel.PREDICTIONS)
+#' @return an R equivalent of the dataset
+#'
+#' @export
+convertPredictions <- function(pred, key) {
+  jmap <- pred$get(key)
+  iter <- jmap$keySet()$iterator()
+  size <- jmap$size()
+  ageYr <- 1:size
+  data <- 1:size
+
+  i <- 1
+  while (iter$hasNext()) {
+    rowkey <- J4R::callJavaMethod(iter, "next")
+    ageYr[i] <- rowkey
+    data[i] <- jmap$get(rowkey)
+    i <- i + 1
+  }
+
+  output <- data.frame(ageYr, data)
+  colnames(output)[2] <- key
+
+  return(output)
 }
 

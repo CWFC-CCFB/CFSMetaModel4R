@@ -279,7 +279,7 @@ MMAddSimulationResult <- function(stratumGroupID, initialAgeYr, simulationResult
 }
 
 #' Fits the metamodel using the simulation results given to the metamodel manager using AddSimulationResult beforehand.
-#' Use MMGetPrediction() afterwards to retrieve metamodel predictions.
+#' Use MMGetPredictions() afterwards to retrieve metamodel predictions.
 #' @param outputType The outputType to fit the metamodel for
 #' @export
 MMFitMetaModel <- function(outputType) {
@@ -288,18 +288,38 @@ MMFitMetaModel <- function(outputType) {
   metaModelMgr$fitMetaModels(outputType)
 }
 
-#' Gets a prediction from the metamodel calculated using the simulation results added to it.
+#' Gets predictions from the metamodel using fitted parameters
 #' MMFitMetaModel() must have been called prior to calling this method.
 #' @param stratumGroupID The stratum group id for which we want the prediction
-#' @param ageYr The stratum age for which we want the prediction
+#' @param ageYr A vector of all ages for which we want the predictions
 #' @param timeSinceInitialDateYr The number of years elapsed since initialDateYear for ageYr
-#' @return the prediction value (number)
+#' @param varianceOutputType A string containing the enum representing the desired variance output type
+#' @return a map containing the prediction values and optionally the variance values as well
 #' @seealso MMAddSimulationResult, MMFitMetaModel
 #' @export
-MMGetPrediction <- function(stratumGroup, ageYr, timeSinceInitialDateYr) {
+MMGetPredictions <- function(stratumGroupID, ageYr, timeSinceInitialDateYr, varianceOutputType) {
   metaModelMgr <- getMetaModelMgr()
 
-  return (metaModelMgr$getPrediction(stratumGroup, as.integer(ageYr), as.integer(timeSinceInitialDateYr)))
+  ageYrArray <- J4R::as.JavaArray(as.integer(ageYr))
+  varianceOutputEnum <- J4R::createJavaObject("repicea.simulation.metamodel.MetaModel$PredictionVarianceOutputType", varianceOutputType)
+
+  return (metaModelMgr$get(stratumGroupID)$getPredictions(ageYrArray, as.integer(timeSinceInitialDateYr), varianceOutputEnum))
+}
+
+#' Gets predictions from the metamodel using MonteCarlo generation of parameters
+#' MMFitMetaModel() must have been called prior to calling this method.
+#' @param stratumGroupID The stratum group id for which we want the prediction
+#' @param ageYr A vector of all ages for which we want the predictions
+#' @param timeSinceInitialDateYr The number of years elapsed since initialDateYear for ageYr
+#' @param nbSubjects The number of subjects to generate random parameters for  (use 0 to disable MC simulation for subjects)
+#' @param nRealizations The number of realizations to generate random parameters for (use 0 to disable MC simulation for realizations)
+#' @return the prediction values (number)
+#' @seealso MMAddSimulationResult, MMFitMetaModel
+#' @export
+MMGetMonteCarloPredictions <- function(stratumGroupID, ageYr, timeSinceInitialDateYr, nbSubjects, nbRealizations) {
+  metaModelMgr <- getMetaModelMgr()
+
+  return (metaModelMgr$get(stratumGroupID)$getMonteCarloPredictions(as.integer(ageYr), as.integer(timeSinceInitialDateYr), as.integer(nbSubjects), as.integer(nbRealizations)))
 }
 
 #' Gets the possible output types for the specified stratumGroupID in the metamodel.

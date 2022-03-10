@@ -1,7 +1,7 @@
 Package: Capsis4R
 Type: Package
 Title: Connect to the 'CAPSIS' Server and Run Simulations
-Version: 0.1.0
+Version: 0.1.1
 Author: Jean-François Lavoie and Mathieu Fortin, Canadian Wood Fibre Centre, Canadian Forest Service
 Maintainer: Mathieu Fortin <mathieu.fortin.re@gmail.com>
 Copyright: Her Majesty the Queen in right of Canada
