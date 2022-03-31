@@ -91,7 +91,7 @@ CBInitialize <- function(address, port, internalPort, key) {
   if (exists("script", envir=C4RCacheEnv, inherits=FALSE) || exists("metaModelMgr", envir=C4RCacheEnv, inherits=FALSE))
     CBRelease()
 
-  result <- J4R::connectToJava(host="192.168.1.11", port = port, internalPort = internalPort, public=T, key=key)
+  result <- J4R::connectToJava(host=address, port = port, internalPort = internalPort, public=T, key=key)
   if (result == FALSE)
     stop(paste("Could not initialize server at ", address, rep=""))
 
