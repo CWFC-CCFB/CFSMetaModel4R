@@ -1,6 +1,6 @@
 #############################################################
 # This file is part of the Capsis4R library located at :
-# https://sourceforge.net/projects/capsis4r/
+# https://github.com/CWFC-CCFB/Capsis4R
 #
 # Copyright (C) 2020-2021 Jean-François Lavoie and Mathieu Fortin
 # for Canadian Forest Service.

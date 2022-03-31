@@ -1,6 +1,6 @@
 #############################################################
 # This file is part of the Capsis4R library located at :
-# https://sourceforge.net/projects/capsis4r/
+# https://github.com/CWFC-CCFB/Capsis4R
 #
 # Copyright (C) 2022 Jean-François Lavoie and Mathieu Fortin
 # for Canadian Forest Service.
@@ -31,7 +31,7 @@ C4RCacheEnv <- new.env()
 .welcomeMessage <- function() {
   packageStartupMessage("Welcome to Capsis4R !")
   packageStartupMessage("Please, make sure that the Java J4R server is running and accessible from your computer.")
-  packageStartupMessage("For more information, visit https://sourceforge.net/p/ .")
+  packageStartupMessage("For more information, visit https://github.com/CWFC-CCFB/Capsis4R")
 }
 
 .onAttach <- function(libname, pkgname) {
