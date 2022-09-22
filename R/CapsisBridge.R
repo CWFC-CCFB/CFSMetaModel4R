@@ -44,16 +44,16 @@ C4RCacheEnv <- new.env()
   CBRelease();
 }
 
-#' Gets the CAPSIS script API object through J4R
-#' @export
-getScript <- function() {
-  if(exists("script", envir=C4RCacheEnv, inherits=FALSE)){
-    return(get("script", envir=C4RCacheEnv, inherits=FALSE))
-  }
-  else {
-    stop("Connection to server not established.  Please call CBInitialize() first.")
-  }
-}
+#' #' Gets the CAPSIS script API object through J4R
+#' #' @export
+#' getScript <- function() {
+#'   if(exists("script", envir=C4RCacheEnv, inherits=FALSE)){
+#'     return(get("script", envir=C4RCacheEnv, inherits=FALSE))
+#'   }
+#'   else {
+#'     stop("Connection to server not established.  Please call CBInitialize() first.")
+#'   }
+#' }
 
 #' Gets the MetaModelManager API object through J4R
 #' @export
@@ -70,8 +70,8 @@ getMetaModelMgr <- function() {
 #' @export
 CBRelease <- function() {
 
-  if (!is.null(getScript()))
-    rm(list = "script", envir = C4RCacheEnv)
+  # if (!is.null(getScript()))
+  #   rm(list = "script", envir = C4RCacheEnv)
 
   if (!is.null(getMetaModelMgr()))
     rm(list = "metaModelMgr", envir = C4RCacheEnv)
@@ -85,156 +85,26 @@ CBRelease <- function() {
 #' @param port The port number to use to connect to the J4R server
 #' @param internalPort The internal ports to use to connect to the J4R server (ex : 50000:50001)
 #' @param key A pre-shared key integer used by the server to accept the client requests
+#' @param scriptClass the class of the script to be starter (by default artemis.script.ArtScript)
 #' @seealso CBRelease
 #' @export
 CBInitialize <- function(address, port, internalPort, key) {
-  if (exists("script", envir=C4RCacheEnv, inherits=FALSE) || exists("metaModelMgr", envir=C4RCacheEnv, inherits=FALSE))
+#  if (exists("script", envir=C4RCacheEnv, inherits=FALSE) || exists("metaModelMgr", envir=C4RCacheEnv, inherits=FALSE))
+  if (J4R::isConnectedToJava())
     CBRelease()
 
+  if (address == "localhost")
+    address = "127.0.0.1"
   result <- J4R::connectToJava(host=address, port = port, internalPort = internalPort, public=T, key=key)
   if (result == FALSE)
     stop(paste("Could not initialize server at ", address, rep=""))
 
-  assign("script", J4R::createJavaObject("artemis.script.ArtScript"), envir = C4RCacheEnv, inherits = FALSE)
+
+# assign("script", J4R::createJavaObject(scriptClass), envir = C4RCacheEnv, inherits = FALSE)
 
   assign("metaModelMgr", J4R::createJavaObject("repicea.simulation.metamodel.MetaModelManager"), envir = C4RCacheEnv, inherits = FALSE)
 }
 
-#' Return Capsis4R version
-#' @return List containing version numbers
-#' @export
-CBGetVersion <- function() {
-  script <- getScript()
-
-  ver = list("Capsis4R" = toString(packageVersion("Capsis4R")), "Capsis" = script$getCapsisVersion())
-
-  return (ver)
-}
-
-#' Enumerates the model data fields expected by the server.  Use this to create the index array send to CBSetFieldMatches.
-#' @return A vector of strings containing all the fields as triplets separated by ";" ex : "PLOT (mandatory); String; Match: 0       1"
-#' @seealso CBSetFieldMatches
-#' @export
-CBGetModelDataFields<- function() {
-  script <- getScript()
-
-  fields <- script$getFieldDescriptions()
-
-  values <- J4R::getAllValuesFromListObject(fields)
-
-  return (values$toString())
-}
-
-#' Sets initial model parameters.  Must be called prior to calling CBRunSimulation
-#' @param initialDateYear The initial year to be used for simulation
-#' @param stochasticMode Enable stochastic mode simulation (0 = disable)
-#' @param numberOfRealizations The number of realizations to be used for simulation
-#' @param applicationScale Application scale, possible values are ["FMU", "Stand"]
-#' @param climateChangeOption Climate change option, possible values are ["NoChange", "Plus2Degrees", "Plus4Degrees", "Plus6Degrees"]
-#' @seealso CBRunSimulation
-#' @export
-CBSetInitialParameters <- function(initialDateYear, stochasticMode, numberOfRealizations, applicationScale, climateChangeOption) {
-  script <- getScript()
-
-  applicationScaleEnum <- createJavaObject("repicea.simulation.ApplicationScaleProvider$ApplicationScale", applicationScale)
-
-  script$setInitialParameters(as.integer(initialDateYear), stochasticMode != 0, as.integer(numberOfRealizations), applicationScaleEnum, climateChangeOption)
-}
-
-#' Sets evolution parameters.  Must be called prior to calling CBRunSimulation
-#' @param finalDateYear The final year to be used for simulation
-#' @seealso CBRunSimulation
-#' @export
-CBSetEvolutionParameters <- function(finalDateYear) {
-  script <- getScript()
-
-  script$setEvolutionParameters(as.integer(finalDateYear))
-}
-
-#' Gets the list of species of the specified type
-#' @param types The types to get the list of species for (vector)
-#' @return a vector containing all the names of the species for all input types
-#' @export
-CBGetSpeciesOfType <- function(types) {
-  script <- getScript()
-
-  speciesTypeArray <- J4R::createJavaObject("repicea.simulation.covariateproviders.treelevel.SpeciesTypeProvider$SpeciesType", length(as.vector(types)), isArray=TRUE)
-
-  enums <- J4R::createJavaObject("repicea.simulation.covariateproviders.treelevel.SpeciesTypeProvider$SpeciesType", types)
-
-  J4R::setValueInArray(speciesTypeArray, enums)
-
-  species <- script$getSpeciesOfType(speciesTypeArray)
-
-  return(species)
-}
-
-#' Register a request for a particular output of the simulation.
-#' @param request The request to register
-#' @param aggregationPatterns The aggregation patterns to register
-#' @export
-CBRegisterOutputRequest <- function(request, aggregationPatterns) {
-  script <- getScript()
-
-  script$registerOutputRequest(request, aggregationPatterns)
-}
-
-#' Sets field matches for input data.  Must be called prior to calling CBSendData.
-#' @param matches An integer vector specifying the field match order to be used by the server when interpreting CBSendData calls.
-#' @return TRUE if operation succeed
-#' @seealso CBGetModelDataFields
-#' @export
-CBSetFieldMatches <- function(matches) {
-  script <- getScript()
-
-  matchesJavaArray <- J4R::as.JavaArray(as.integer(matches))
-
-  result <- script$setFieldMatches(matchesJavaArray)
-
-  if (result != TRUE)
-    stop("CBSetFieldMatches failed")
-}
-
-#' Sends data to the CAPSIS Server.  Must be called prior to calling CBRunSimulation.
-#'
-#' @param data The data rows as a list of vector of strings.
-#'
-#' @seealso CBRunSimulation
-#'
-#' @export
-CBSendData <- function(data) {
-  script <- getScript()
-
-  for(o in data) {
-    tempArray <- J4R::createJavaObject("java.lang.Object", length(o), isArray = TRUE)
-    J4R::setValueInArray(tempArray, o)
-    script$addRecord(tempArray)
-  }
-}
-
-#' Runs the simulation on the CAPSIS model
-#'
-#' @return simulation results
-#'
-#' @seealso CBRunSimulation
-#'
-#' @export
-CBRunSimulation <- function() {
-  script <- getScript()
-
-  return (script$runSimulation())
-}
-
-#' Closes the active project and frees its resources
-#'
-#' @seealso CBRunSimulation
-#'
-#' @export
-CBCloseProject <- function() {
-  script <- getScript()
-
-  script$closeProject()
-}
 
 #' Creates a new metamodel.  This must be called before MMAddSimulationResult calls
 #' @param stratumGroupID The stratum group id to add the simulation results to
