@@ -2,6 +2,7 @@
 
 export(CBInitialize)
 export(CBRelease)
+export(convertDataFrameToCSVString)
 export(convertDataSet)
 export(convertPredictions)
 export(new_CapsisScript)
