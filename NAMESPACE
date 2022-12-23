@@ -2,9 +2,11 @@
 
 export(CBInitialize)
 export(CBRelease)
-export(convertDataFrameToCSVString)
 export(convertDataSet)
 export(convertPredictions)
 export(new_CapsisScript)
 export(new_MetaModelManager)
+export(new_OSMClass)
+export(new_OSMOutputRequestList)
+export(new_OSMResult)
 export(plotMetaModel)

@@ -18,3 +18,5 @@ RoxygenNote: 7.2.3
 Suggests: 
     testthat
 Depends:
+  httr,
+  jsonlite
