@@ -48,6 +48,96 @@ new_OSMClass <- function(host) {
                 },
                 assign.env = me)
 
+  delayedAssign("VariantList",
+                function() {
+                  url <- paste(me$host, "OSMSimulation/VariantList", sep="/")
+
+                  r <- GET( url, query = list());
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return (resultJSON)
+                },
+                assign.env = me)
+
+  delayedAssign("VariantSpecies",
+                function(variant, outputAsVector, speciesType) {
+                  url <- paste(me$host, "OSMSimulation/VariantSpecies", sep="/")
+
+                  r <- GET( url, query = list(variant = variant, type = speciesType));
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  if (outputAsVector)
+                  {
+                    resultVector <- vector(mode="character", length=length(resultJSON))
+                    for (i in 1:length(resultJSON))
+                    {
+                      resultVector[i] = resultJSON[[i]]$key
+                    }
+
+                    return (resultVector)
+                  }
+                  else
+                  {
+                    return(resultJSON)
+                  }
+                },
+                assign.env = me)
+
+  delayedAssign("OutputRequestTypes",
+                function() {
+                  url <- paste(me$host, "OSMSimulation/OutputRequestTypes", sep="/")
+
+                  r <- GET( url, query = list());
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return (resultJSON)
+                },
+                assign.env = me)
+
+
+  delayedAssign("VariantFields",
+                function(variant) {
+                  url <- paste(me$host, "OSMSimulation/VariantFields", sep="/")
+
+                  r <- GET( url, query = list(variant = variant));
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return (resultJSON)
+                },
+                assign.env = me)
+
   delayedAssign("Simulate",
                 function(data, outputRequestList, variant, years, ypc) {
                   outputRequestListJSON <- outputRequestList$toJSONString()
@@ -102,11 +192,12 @@ new_OSMResult <- function(resultJSON)
   me$nbPlots <- resultJSON$nbPlots
   me$climateChangeScenario <- resultJSON$climateChangeScenario
   me$growthModel <- resultJSON$growthModel
-  return (me)
 
   delayedAssign("AggregateResults",
                 function() {
-                  return (aggregate(Value~Year+SpeciesGroup+OutputType, me$dataSet, FUN="mean"))
+                  return (aggregate(Estimate~DateYr+timeSinceInitialDateYear+OutputType, me$dataSet, FUN="mean"))
                 },
                 assign.env = me)
+
+  return (me)
 }
