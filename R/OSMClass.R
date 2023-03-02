@@ -39,6 +39,7 @@ new_OSMClass <- function(host) {
   class(me) <- c("OSMClass")
   me$host <- host
   me$orList <- list()
+  me$endpoint <- c("FVSSimulation")
   delayedAssign("ConvertDataFrameToCSVString",
                 function(dataFrameInstance) {
                   outputVector <- sapply(1:nrow(dataFrameInstance), function(i) {paste(dataFrameInstance[i,], collapse= ",")})
@@ -50,7 +51,7 @@ new_OSMClass <- function(host) {
 
   delayedAssign("VariantList",
                 function() {
-                  url <- paste(me$host, "OSMSimulation/VariantList", sep="/")
+                  url <- paste(me$host, me$endpoint, "VariantList", sep="/")
 
                   r <- GET( url, query = list());
 
@@ -69,7 +70,7 @@ new_OSMClass <- function(host) {
 
   delayedAssign("VariantSpecies",
                 function(variant, outputAsVector, speciesType) {
-                  url <- paste(me$host, "OSMSimulation/VariantSpecies", sep="/")
+                  url <- paste(me$host, me$endpoint, "VariantSpecies", sep="/")
 
                   r <- GET( url, query = list(variant = variant, type = speciesType));
 
@@ -101,7 +102,7 @@ new_OSMClass <- function(host) {
 
   delayedAssign("OutputRequestTypes",
                 function() {
-                  url <- paste(me$host, "OSMSimulation/OutputRequestTypes", sep="/")
+                  url <- paste(me$host, me$endpoint, "OutputRequestTypes", sep="/")
 
                   r <- GET( url, query = list());
 
@@ -121,7 +122,7 @@ new_OSMClass <- function(host) {
 
   delayedAssign("VariantFields",
                 function(variant) {
-                  url <- paste(me$host, "OSMSimulation/VariantFields", sep="/")
+                  url <- paste(me$host, me$endpoint, "VariantFields", sep="/")
 
                   r <- GET( url, query = list(variant = variant));
 
@@ -142,7 +143,7 @@ new_OSMClass <- function(host) {
                 function(data, outputRequestList, variant, years, ypc) {
                   outputRequestListJSON <- outputRequestList$toJSONString()
                   csvData <- me$ConvertDataFrameToCSVString(data)
-                  url <- paste(me$host, "OSMSimulation/Simulate", sep="/")
+                  url <- paste(me$host, me$endpoint, "Simulate", sep="/")
                   r <- POST( url, query = list(years = as.character(years), variant = variant, ypc = as.character(ypc)), body = list(data=csvData, output=outputRequestListJSON), encode = "multipart" );
 
                   if (r$status_code != 200)
