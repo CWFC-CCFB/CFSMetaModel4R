@@ -39,7 +39,7 @@ new_OSMClass <- function(host) {
   class(me) <- c("OSMClass")
   me$host <- host
   me$orList <- list()
-  me$endpoint <- c("FVSSimulation")
+  me$endpoint <- c("OSMSimulation")
   delayedAssign("ConvertDataFrameToCSVString",
                 function(dataFrameInstance) {
                   outputVector <- sapply(1:nrow(dataFrameInstance), function(i) {paste(dataFrameInstance[i,], collapse= ",")})
