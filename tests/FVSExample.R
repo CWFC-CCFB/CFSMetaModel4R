@@ -4,27 +4,29 @@ library(Capsis4R)
 #library(jsonlite)
 
 #data("OSMThreeStandList")
-data <- read.csv("./tests/FVS_TreeList.csv")
+data <- read.csv("./tests/FVS_TreeListTwoTreesOnePlot.csv")
 
 CBInitialize("localhost", 18000, 50001:50002, 212)
 
-osm <- new_OSMClass("https://localhost:7135")
+fvs <- new_FVSClass("https://localhost:7135")
 
-variantList <- osm$VariantList()
+variantList <- fvs$VariantList()
 variant <- variantList[[1]]
 
-speciesConiferous <- osm$VariantSpecies(variant, TRUE, "Coniferous")
-speciesBroadleaved <- osm$VariantSpecies(variant, TRUE, "Broadleaved")
+speciesConiferous <- fvs$VariantSpecies(variant, TRUE, "Coniferous")
+speciesBroadleaved <- fvs$VariantSpecies(variant, TRUE, "Broadleaved")
 
-#variantFields <- osm$VariantFields(variant)
+#variantFields <- fvs$VariantFields(variant)
 
-outputRequestTypes <- osm$OutputRequestTypes()
+outputRequestTypes <- fvs$OutputRequestTypes()
 
 outputRequestList <- new_OSMOutputRequestList()
 
 outputRequestList$addOutputRequest(outputRequestTypes$statusClass[[1]], outputRequestTypes$variable[[1]], list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved))
 
-df <- osm$Simulate(data, outputRequestList, variant, 10, 2)
+standinfo <- new_FVStandInfo("KAM-IDFxh2/01", 21, 0, 0, 1150)
 
-scriptResult <- osm$PrepareScriptResult(df)
+df <- fvs$Simulate(data, outputRequestList, variant, standinfo, 10, 2, 1990)
+
+scriptResult <- fvs$PrepareScriptResult(df)
 
