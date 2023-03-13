@@ -138,12 +138,12 @@ new_FVSClass <- function(host) {
                 assign.env = me)
 
   delayedAssign("Simulate",
-                function(data, outputRequestList, variant, standInfo, years, ypc, initialYear) {
+                function(data, outputRequestList, variant, standInfoDict, years, ypc, initialYear) {
                   outputRequestListJSON <- outputRequestList$toJSONString()
-                  standInfoJSON <- standInfo$toJSONString()
+                  standInfoDictJSON <- standInfoDict$toJSONString()
                   csvData <- me$ConvertDataFrameToCSVString(data)
                   url <- paste(me$host, me$endpoint, "Simulate", sep="/")
-                  r <- POST( url, query = list(years = as.character(years), variant = variant, ypc = as.character(ypc), initialYear = as.character(initialYear)), body = list(data=csvData, output=outputRequestListJSON, standInfo=standInfoJSON), encode = "multipart" );
+                  r <- POST( url, query = list(years = as.character(years), variant = variant, ypc = as.character(ypc), initialYear = as.character(initialYear)), body = list(data=csvData, output=outputRequestListJSON, standInfoDict=standInfoDictJSON), encode = "multipart" );
 
                   if (r$status_code != 200)
                   {
@@ -165,7 +165,7 @@ new_FVSClass <- function(host) {
 
                   dfAggregated <- osmSimResults$AggregateResults()
 
-                  dataSet <- J4R::callJavaMethod("repicea.simulation.metamodel.ScriptResult", "createEmptyReducedDataSet")
+                  dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyReducedDataSet")
                   for (i in 1:nrow(dfAggregated))
                   {
                     jarray <- J4R::createJavaObject("java.lang.Object", ncol(dfAggregated), isArray = TRUE)
@@ -177,7 +177,7 @@ new_FVSClass <- function(host) {
 
                   climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", df$climateChangeScenario)
 
-                  scriptResult <- J4R::createJavaObject("repicea.simulation.metamodel.ScriptResult", df$nbRealizations, df$nbPlots, climateChangeScenario, df$growthModel, dataSet)
+                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", df$nbRealizations, df$nbPlots, climateChangeScenario, df$growthModel, dataSet)
 
                   return(scriptResult)
                 },

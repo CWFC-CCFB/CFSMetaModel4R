@@ -25,10 +25,17 @@
 #' }
 #'
 #' @export
-new_FVStandInfo <- function(ecoRegion, standAge, aspectDegrees, slopePct, elevationMeters) {
+new_FVStandInfoDict <- function() {
   me <- new.env(parent = emptyenv())
-  class(me) <- c("FVStandInfo")
-  me$SIList <- list(ecoRegion = as.character(ecoRegion), standAge = as.integer(standAge), aspectDegrees = as.numeric(aspectDegrees), slopePct = as.numeric(slopePct), elevationMeters = as.numeric(elevationMeters))
+  class(me) <- c("FVStandInfoDict")
+  me$SIList <- list()
+
+  delayedAssign("addStandInfo",
+                function(plotID, ecoRegion, standAge, aspectDegrees, slopePct, elevationMeters) {
+
+                  me$SIList[[plotID]] <- list(ecoRegion = as.character(ecoRegion), standAge = as.integer(standAge), aspectDegrees = as.numeric(aspectDegrees), slopePct = as.numeric(slopePct), elevationMeters = as.numeric(elevationMeters))
+                },
+                assign.env = me)
 
   delayedAssign("toJSONString",
                 function() {
