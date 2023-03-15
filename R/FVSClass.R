@@ -1,4 +1,19 @@
 #'
+#' A plot with two trees that can be passed to FVS Web API
+#'
+#' @docType data
+#'
+#' @usage data(FVSTreeListTwoTreesOnePlot)
+#'
+#' @keywords datasets
+#'
+#' @examples
+#' data(FVSTreeListTwoTreesOnePlot)
+"FVSTreeListTwoTreesOnePlot"
+
+
+
+#'
 #' Constructor for the FVSClass class.
 #'
 #' @description This class is the interface to the OSM http server.
@@ -30,7 +45,6 @@
 #' Return character vector
 #' }
 #'
-
 #' @export
 new_FVSClass <- function(host) {
   me <- new.env(parent = emptyenv())
@@ -161,9 +175,9 @@ new_FVSClass <- function(host) {
                 assign.env = me)
 
   delayedAssign("PrepareScriptResult",
-                function(osmSimResults) {
-
-                  dfAggregated <- osmSimResults$AggregateResults()
+                function(fvsSimResults) {
+                  .connectToJ4R()
+                  dfAggregated <- fvsSimResults$AggregateResults()
 
                   dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyReducedDataSet")
                   for (i in 1:nrow(dfAggregated))
@@ -173,11 +187,9 @@ new_FVSClass <- function(host) {
                     dataSet$addObservation(jarray)
                   }
 
-                  print(cat(dataSet$toString()))
+                  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", fvsSimResults$climateChangeScenario)
 
-                  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", df$climateChangeScenario)
-
-                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", df$nbRealizations, df$nbPlots, climateChangeScenario, df$growthModel, dataSet)
+                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", fvsSimResults$nbRealizations, fvsSimResults$nbPlots, climateChangeScenario, fvsSimResults$growthModel, dataSet)
 
                   return(scriptResult)
                 },

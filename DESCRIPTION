@@ -1,22 +1,23 @@
-Package: Capsis4R
+Package: CFSMetaModel4R
 Type: Package
-Title: Connect to the 'CAPSIS' Server and Run Simulations
+Title: Allow to Fit Meta-Models From Existing Tree-Level Models
 Version: 0.9.0
 Author: Jean-François Lavoie and Mathieu Fortin, Canadian Wood Fibre Centre, Canadian Forest Service
 Maintainer: Mathieu Fortin <mathieu.fortin.re@gmail.com>
 Copyright: His Majesty the King in right of Canada
 Description: To be completed
-URL: https://sourceforge.net/projects/capsis4r/
+URL: https://github.com/CWFC-CCFB/CFSMetaModel4R
 Imports:
   ggplot2 (>= 3.3),
   J4R (>= 1.1.9)
 License: GPL-3
-BugReports: https://sourceforge.net/p/capsis4r/tickets/
+BugReports: https://github.com/CWFC-CCFB/CFSMetaModel4R/issues
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
 Suggests: 
-    testthat
+    testthat (>= 3.0.0)
 Depends:
   httr,
   jsonlite
+Config/testthat/edition: 3

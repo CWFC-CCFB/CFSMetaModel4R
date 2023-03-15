@@ -320,7 +320,7 @@
     },
     "nbRealizations":0,
     "climateChangeOption":"NoChange",
-    "growthModel":"Acadian",
+    "growthModel":"OSM-Acadian",
     "upscaling":{
       "@keys":[
         {
@@ -388,9 +388,9 @@
     "this$0":{"@ref":1}
   },
   "fit":{
-    "timeStamp":"2023-01-20T12:51:54-0500",
-    "outputType":"AliveVolume_Broadleaved",
-    "fitModel":"ChapmanRichardsWithRandomEffect",
+    "timeStamp":"2023-03-15T15:12:51-0400",
+    "outputType":"AliveVolume_Coniferous",
+    "fitModel":"ChapmanRichardsDerivativeWithRandomEffect",
     "stratumGroup":"FMU01152",
     "this$0":{"@ref":1}
   }

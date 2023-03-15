@@ -85,6 +85,7 @@
 #'
 #' @export
 new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
+  .connectToJ4R()
   me <- new.env(parent = emptyenv())
   class(me) <- c("MetaModel")
   me$.metaModel <- J4R::createJavaObject("repicea.simulation.metamodel.MetaModel", stratumGroup, geoDomain, dataSource)
@@ -115,6 +116,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 
   delayedAssign("fitModel",
                 function(outputType, enableMixedModelImplementations) {
+                  message("Fitting candidate meta-models. This may take a while...")
                   me$.metaModel$fitModel(outputType, as.logical(enableMixedModelImplementations))
                   return(invisible(NULL))
                 },
@@ -178,7 +180,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 
   delayedAssign("getSummary",
                 function() {
-                  return(me$.metaModel$getSummary())
+                  return(cat(me$.metaModel$getSummary()))
                 },
                 assign.env = me)
 

@@ -1,11 +1,14 @@
+#'
+#' Happy path test up to addScriptResult
+#'
+#'  IMPORTANT OSM Web API must be online
+#'
+
 rm(list=ls())
 
-library(Capsis4R)
-#library(jsonlite)
+library(CFSMetaModel4R)
 
 data("OSMThreeStandList")
-
-CBInitialize("localhost", 18000, 50001:50002, 212)
 
 osm <- new_OSMClass("https://localhost:7032")
 
@@ -29,8 +32,14 @@ scriptResult <- osm$PrepareScriptResult(df)
 
 initialAgeYr <- as.integer(40)
 
-metaModelManager <- new_MetaModelManager()
+metaModel <- new_MetaModel("stratumGroupID", "geoDomain", "dataSource")
 
-metaModelManager$createMetaModel("stratumGroupID", "geoDomain", "dataSource")
+metaModel$addScriptResult(initialAgeYr, scriptResult)
+dataSet <- scriptResult$getDataSet()
 
-metaModelManager$addSimulationResult("stratumGroupID", initialAgeYr, scriptResult)
+test_that("Number of observations in the dataset", {
+  expect_equal(dataSet$getNumberOfObservations(), 12)
+  expect_equal(dataSet$getValueAt(as.integer(11),"Estimate"), 248.458891933529, tolerance=1E-8)
+})
+
+J4R::shutdownClient()

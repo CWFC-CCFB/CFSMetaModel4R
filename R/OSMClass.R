@@ -1,4 +1,18 @@
 #'
+#' A list of three plots that can be passed to OSM Web API
+#'
+#' @docType data
+#'
+#' @usage data(OSMThreeStandList)
+#'
+#' @keywords datasets
+#'
+#' @examples
+#' data(OSMThreeStandList)
+"OSMThreeStandList"
+
+
+#'
 #' Constructor for the OSMClass class.
 #'
 #' @description This class is the interface to the OSM http server.
@@ -30,9 +44,6 @@
 #' Return character vector
 #' }
 #'
-#'data
-"OSMThreeStandList"
-
 #' @export
 new_OSMClass <- function(host) {
   me <- new.env(parent = emptyenv())
@@ -163,6 +174,7 @@ new_OSMClass <- function(host) {
 
   delayedAssign("PrepareScriptResult",
                 function(osmSimResults) {
+                  .connectToJ4R() # must be connected to J4R to create a ScriptResult instance
 
                   dfAggregated <- osmSimResults$AggregateResults()
 
@@ -174,11 +186,9 @@ new_OSMClass <- function(host) {
                     dataSet$addObservation(jarray)
                   }
 
-                  print(cat(dataSet$toString()))
+                  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", osmSimResults$climateChangeScenario)
 
-                  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", df$climateChangeScenario)
-
-                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", df$nbRealizations, df$nbPlots, climateChangeScenario, df$growthModel, dataSet)
+                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", osmSimResults$nbRealizations, osmSimResults$nbPlots, climateChangeScenario, osmSimResults$growthModel, dataSet)
 
                   return(scriptResult)
                 },
@@ -187,41 +197,3 @@ new_OSMClass <- function(host) {
   return(me)
 }
 
-#'
-#' Constructor for the OSMResult class.
-#'
-#' @description This class extracts data received from JSON OSM simulate() calls to allow later scriptResult conversion
-#'
-#' @return an S3 OSMResult instance
-#'
-#'  TODO update documentation here
-#'
-#' @details
-#'
-#' The class contains the following methods: \cr
-#' \itemize{
-#'
-#' \item \bold{AggregateResults()} \cr
-#' Aggregates results to return only the average value for all plots \cr
-#'
-#' }
-#'
-#' @export
-new_OSMResult <- function(resultJSON)
-{
-  me <- new.env(parent = emptyenv())
-  class(me) <- c("OSMResult")
-  me$dataSet <- read.csv(text = resultJSON$csvReport)
-  me$nbRealizations <- resultJSON$nbRealizations
-  me$nbPlots <- resultJSON$nbPlots
-  me$climateChangeScenario <- resultJSON$climateChangeScenario
-  me$growthModel <- resultJSON$growthModel
-
-  delayedAssign("AggregateResults",
-                function() {
-                  return (aggregate(Estimate~DateYr+timeSinceInitialDateYear+OutputType, me$dataSet, FUN="mean"))
-                },
-                assign.env = me)
-
-  return (me)
-}
