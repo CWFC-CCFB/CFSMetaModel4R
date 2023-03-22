@@ -18,10 +18,10 @@
 #' }
 #'
 #' @export
-new_OSMResult <- function(resultJSON)
+new_SimulationResult <- function(resultJSON)
 {
   me <- new.env(parent = emptyenv())
-  class(me) <- c("OSMResult")
+  class(me) <- c("SimulationResult")
   me$dataSet <- read.csv(text = resultJSON$csvReport)
   me$nbRealizations <- resultJSON$nbRealizations
   me$nbPlots <- resultJSON$nbPlots
