@@ -24,7 +24,7 @@ speciesBroadleaved <- fvs$VariantSpecies(variant, TRUE, "Broadleaved")
 
 outputRequestTypes <- fvs$OutputRequestTypes()
 
-outputRequestList <- new_OSMOutputRequestList()
+outputRequestList <- new_OutputRequestList()
 
 outputRequestList$addOutputRequest(outputRequestTypes$statusClass[[1]], outputRequestTypes$variable[[1]], list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved))
 

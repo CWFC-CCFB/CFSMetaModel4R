@@ -1,178 +1,262 @@
 #'
-#' Constructor for the CapsisScript class.
+#' A plot with two trees that can be passed to FVS Web API
 #'
-#' @description A CapsisScript instance contains a pointer to a Java instance. It
-#' also implements many methods which are described below.
+#' @docType data
 #'
-#' @return an S3 CapsisScript instance
+#' @usage data(FVSTreeListTwoTreesOnePlot)
+#'
+#' @keywords datasets
+#'
+#' @examples
+
+#'
+#' Constructor for the CapsisClass class.
+#'
+#' @description This class is the interface to the OSM http server.
+#'
+#' @return an S3 CapsisClass instance
+#'
+#'  TODO update documentation here
 #'
 #' @details
 #'
 #' The class contains the following methods: \cr
 #' \itemize{
 #'
-#' \item \bold{getVersion()} \cr
-#' Provide the version numbers CAPSIS and Capsis4R \cr
-#' Return a List
+#' \item \bold{ConvertDataFrameToCSVString(dataFrameInstance)} \cr
+#' Utility method to convert a dataframe to CSV string to be sent as input data to the server \cr
+#' \item dataFrameInstance - The status class to be requested (character, typically one of "Alive", "Dead" )
+#' \item variable - The variable to be requested (character, typically one of "Volume", "Biomass")
+#' \item aggregrationPatterns - A list of aggregation patterns to be used for the request (named List where the names are the aggregation groups, and the list data are the species)
 #'
-#' \item \bold{getModelDataFields()} \cr
-#' Enumerate the model data fields expected by the server.  Use this to create the index array send through the setFieldMatches method. \cr
-#' Return A vector of strings containing all the fields as triplets separated by ";" ex : "PLOT (mandatory); String; Match: 0       1"
 #'
-#' \item \bold{setInitialParameters(initialDateYear, stochasticMode, numberOfRealizations, applicationScale, climateChangeOption)} \cr
-#' Set initial model parameters.  Must be called prior to calling runSimulation. \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item initialDateYear - The initial year to be used for simulation (numeric)
-#' \item stochasticMode - Enable stochastic mode simulation (1 = enabled, 0 = disable)
-#' \item numberOfRealizations - The number of realizations to be used for simulation (numeric)
-#' \item applicationScale - The application scale, possible values are ["FMU", "Stand"]
-#' \item climateChangeOption - A climate change option, possible values are ["NoChange", "Plus2Degrees", "Plus4Degrees", "Plus6Degrees"]
-#' }
-#' Return nothing
-#'
-#' \item \bold{setEvolutionParameters(finalDateYear)} \cr
-#' Set evolution parameters.  Must be called prior to calling runSimulation \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item finalDateYear - The final year to be used for simulation
-#' }
-#' Return nothing
-#'
-#' \item \bold{getSpeciesOfType(types)} \cr
-#' Get the list of species of the specified type. \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item types - The types to get the list of species for (vector)
-#' }
-#' Return a vector containing all the names of the species for all input types
-#'
-#' \item \bold{registerOutputRequest(request, aggregationPatterns)} \cr
-#' Register a request for a particular output of the simulation. \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item request - The request to register
-#' \item aggregationPatterns - The aggregation patterns to register
-#' }
-#' Return nothing
-#'
-#' \item \bold{setFieldMatches(matches)} \cr
-#' Set field matches for input data.  Must be called prior to calling sendData. \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item matches - A vector of integere specifying the field match order to be used by the server when interpreting CBSendData calls.
-#' }
-#' Return TRUE if operation succeed
-#'
-#' \item \bold{sendData(data)} \cr
-#' Send data to the CAPSIS Server.  Must be called prior to calling runSimulation. \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item data - A data.frame object whose rows are to be read by CAPSIS
-#' }
-#' Return nothing
-#'
-#' \item \bold{runSimulation()} \cr
-#' Run the simulation on the CAPSIS model \cr
-#' Return the simulation results
-#'
-#' \item \bold{closeProject()} \cr
-#' Close the active project and free its resources \cr
-#' Return nothing
+#' \item \bold{Simulate(data, outputRequestList, variant, years, ypc)} \cr
+#' Converts the current OSMOutputRequestList to a json string \cr
+#' \item data - a string in CSV format that represents the input data to run the simulation on
+#' \item outputRequestList - An object of type OSMOutputRequestList that contains the output data requested
+#' \item variant - A string containing the variant name to use for simulation
+#' \item years - An int containing the number of years the simulation should use
+#' \item ypc - An int containing the number of years per cycle the simulation should use
+
+#' Return character vector
 #' }
 #'
 #' @export
-new_CapsisScript <- function(className) {
+new_CapsisClass <- function(host) {
   me <- new.env(parent = emptyenv())
-  class(me) <- c("CapsisScript")
-  me$.capsisScript <- J4R::createJavaObject(className)
+  class(me) <- c("CapsisClass")
+  me$host <- host
+  me$orList <- list()
+  me$endpoint <- c("CapsisSimulation")
+  delayedAssign("ConvertDataFrameToCSVString",
+                function(dataFrameInstance) {
+                  outputVector <- sapply(1:nrow(dataFrameInstance), function(i) {paste(dataFrameInstance[i,], collapse= ",")})
+                  outputVector <- c(paste(colnames(dataFrameInstance), collapse= ","), outputVector)
+                  outputString <- paste(outputVector, collapse = "\r\n")
+                  return(outputString)
+                },
+                assign.env = me)
 
-  delayedAssign("getVersion",
-                #### getVersion ####
+  delayedAssign("VariantList",
                 function() {
-                  ver = list("Capsis4R" = toString(packageVersion("Capsis4R")), "Capsis" = me$.capsisScript$getCapsisVersion())
-                  return (ver)
+                  url <- paste(me$host, me$endpoint, "VariantList", sep="/")
+
+                  r <- GET( url, query = list());
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return (resultJSON)
                 },
                 assign.env = me)
 
-  delayedAssign("getModelDataFields",
-                #### getModelDataFields ####
-                function() {
-                  fields <- me$.capsisScript$getFieldDescriptions()
-                  values <- J4R::getAllValuesFromListObject(fields)
-                  return (values$toString())
-                },
-                assign.env = me)
+  delayedAssign("VariantSpecies",
+                function(variant, outputAsVector, speciesType) {
+                  url <- paste(me$host, me$endpoint, "VariantSpecies", sep="/")
 
-  delayedAssign("setInitialParameters",
-                #### setInitialParameters ####
-                function(initialDateYear, stochasticMode, numberOfRealizations, applicationScale, climateChangeOption) {
-                  applicationScaleEnum <- J4R::createJavaObject("repicea.simulation.ApplicationScaleProvider$ApplicationScale", applicationScale)
-                  me$.capsisScript$setInitialParameters(as.integer(initialDateYear), stochasticMode != 0, as.integer(numberOfRealizations), applicationScaleEnum, climateChangeOption)
-                },
-                assign.env = me)
+                  r <- GET( url, query = list(variant = variant, type = speciesType));
 
-  delayedAssign("setEvolutionParameters",
-                #### setEvolutionParameters ####
-                function(finalDateYear) {
-                  me$.capsisScript$setEvolutionParameters(as.integer(finalDateYear))
-                },
-                assign.env = me)
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
 
-  delayedAssign("getSpeciesOfType",
-                #### getSpeciesOfType ####
-                function(types) {
-                  speciesTypeArray <- J4R::createJavaObject("repicea.simulation.covariateproviders.treelevel.SpeciesTypeProvider$SpeciesType", length(as.vector(types)), isArray=TRUE)
-                  enums <- J4R::createJavaObject("repicea.simulation.covariateproviders.treelevel.SpeciesTypeProvider$SpeciesType", types)
-                  J4R::setValueInArray(speciesTypeArray, enums)
-                  species <- me$.capsisScript$getSpeciesOfType(speciesTypeArray)
-                  return(species)
-                },
-                assign.env = me)
+                  result <- content(r, "text")
 
-  delayedAssign("registerOutputRequest",
-                #### registerOutputRequest ####
-                function(request, aggregationPatterns) {
-                  me$.capsisScript$registerOutputRequest(request, aggregationPatterns)
-                },
-                assign.env = me)
+                  resultJSON <- fromJSON(result)
 
-  delayedAssign("setFieldMatches",
-                #### setFieldMatches ####
-                function(matches) {
-                  matchesJavaArray <- J4R::as.JavaArray(as.integer(matches))
-                  result <- me$.capsisScript$setFieldMatches(matchesJavaArray)
-                  if (result != TRUE)
-                    stop("CBSetFieldMatches failed")
-                },
-                assign.env = me)
+                  if (outputAsVector)
+                  {
+                    resultVector <- vector(mode="character", length=length(resultJSON))
+                    for (i in 1:length(resultJSON))
+                    {
+                      resultVector[i] = resultJSON[i]
+                    }
 
-  delayedAssign("sendData",
-                #### sendData ####
-                function(data) {
-                  for(o in data) {
-                    tempArray <- J4R::createJavaObject("java.lang.Object", length(o), isArray = TRUE)
-                    J4R::setValueInArray(tempArray, o)
-                    me$.capsisScript$addRecord(tempArray)
+                    return (resultVector)
+                  }
+                  else
+                  {
+                    return(resultJSON)
                   }
                 },
                 assign.env = me)
 
-  delayedAssign("runSimulation",
-                #### runSimulation ####
+  delayedAssign("OutputRequestTypes",
                 function() {
-                  return(me$.capsisScript$runSimulation())
+                  url <- paste(me$host, me$endpoint, "OutputRequestTypes", sep="/")
+
+                  r <- GET( url, query = list());
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return (resultJSON)
                 },
                 assign.env = me)
 
-  delayedAssign("closeProject",
-                #### closeProject ####
-                function() {
-                  me$.capsisScript$closeProject()
+
+  delayedAssign("VariantFields",
+                function(variant) {
+                  url <- paste(me$host, me$endpoint, "VariantFields", sep="/")
+
+                  r <- GET( url, query = list(variant = variant));
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return (resultJSON)
+                },
+                assign.env = me)
+
+  delayedAssign("Simulate",
+                function(data, outputRequestList, variant, years, initialYear, isStochastic, nbRealizations, climateChange, applicationScale, fieldMatches) {
+                  outputRequestListJSON <- outputRequestList$toJSONString()
+                  fieldMatchesJSON <- toJSON(fieldMatches, auto_unbox=TRUE)
+                  csvData <- me$ConvertDataFrameToCSVString(data)
+                  url <- paste(me$host, me$endpoint, "Simulate", sep="/")
+                  r <- POST( url, query = list(years = as.character(years), variant = variant, initialYear = as.character(initialYear), isStochastic=as.logical(isStochastic), nbRealizations = as.integer(nbRealizations), climateChange = as.character(climateChange), applicationScale = as.character(applicationScale), fieldMatches=as.character(fieldMatchesJSON)), body = list(data=csvData, output=outputRequestListJSON), encode = "multipart" )
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return(resultJSON)
+
+                  #osmResult <- new_OSMResult(resultJSON)
+
+                  #return(osmResult)
+                },
+                assign.env = me)
+
+  delayedAssign("TaskStatus",
+                function(taskID) {
+                  outputRequestListJSON <- outputRequestList$toJSONString()
+                  url <- paste(me$host, me$endpoint, "TaskStatus", sep="/")
+                  r <- GET( url, query = list(taskID = as.character(taskID)))
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  osmResult <- NULL
+
+                  if (resultJSON$status == "COMPLETED")
+                  {
+                    osmResult <- new_SimulationResult(resultJSON)
+                  }
+
+                  return(list(code=resultJSON$status, result = osmResult))
+                },
+                assign.env = me)
+
+  delayedAssign("PrepareScriptResult",
+                function(fvsSimResults) {
+                  .connectToJ4R()
+                  dfAggregated <- fvsSimResults$AggregateResults()
+
+                  dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyReducedDataSet")
+                  for (i in 1:nrow(dfAggregated))
+                  {
+                    jarray <- J4R::createJavaObject("java.lang.Object", ncol(dfAggregated), isArray = TRUE)
+                    J4R::setValueInArray(jarray, as.character(dfAggregated[i,]))
+                    dataSet$addObservation(jarray)
+                  }
+
+                  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", fvsSimResults$climateChangeScenario)
+
+                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", fvsSimResults$nbRealizations, fvsSimResults$nbPlots, climateChangeScenario, fvsSimResults$growthModel, dataSet)
+
+                  return(scriptResult)
                 },
                 assign.env = me)
 
   return(me)
 }
 
+#'
+#' Constructor for the OSMResult class.
+#'
+#' @description This class extracts data received from JSON OSM simulate() calls to allow later scriptResult conversion
+#'
+#' @return an S3 OSMResult instance
+#'
+#'  TODO update documentation here
+#'
+#' @details
+#'
+#' The class contains the following methods: \cr
+#' \itemize{
+#'
+#' \item \bold{AggregateResults()} \cr
+#' Aggregates results to return only the average value for all plots \cr
+#'
+#' }
+#'
+#' @export
+new_OSMResult <- function(resultJSON)
+{
+  me <- new.env(parent = emptyenv())
+  class(me) <- c("OSMResult")
+  me$dataSet <- read.csv(text = resultJSON$csvReport)
+  me$nbRealizations <- resultJSON$nbRealizations
+  me$nbPlots <- resultJSON$nbPlots
+  me$climateChangeScenario <- resultJSON$climateChangeScenario
+  me$growthModel <- resultJSON$growthModel
 
+  delayedAssign("AggregateResults",
+                function() {
+                  return (aggregate(Estimate~DateYr+timeSinceInitialDateYear+OutputType, me$dataSet, FUN="mean"))
+                },
+                assign.env = me)
+
+  return (me)
+}

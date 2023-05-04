@@ -7,6 +7,7 @@ rm(list=ls())
 library(CFSMetaModel4R)
 #library(jsonlite)
 
+J4R::connectToJava(port = 18000, internalPort = 50000:50001, public=T, key=212)
 stratumGroupID <- "FMU01152"
 metaModel <- new_MetaModel(stratumGroupID, "geoDomain", "dataSource")
 #metaModel <- J4R::createJavaObject("repicea.simulation.metamodel.MetaModel", stratumGroupID, "geoDomain", "dataSource")
@@ -27,7 +28,7 @@ if (!file.exists(MMFileName))
 
   outputRequestTypes <- osm$OutputRequestTypes()
 
-  outputRequestList <- new_OSMOutputRequestList()
+  outputRequestList <- new_OutputRequestList()
 
   outputRequestList$addOutputRequest(outputRequestTypes$statusClass[[1]], outputRequestTypes$variable[[1]], list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved))
 
@@ -39,9 +40,7 @@ if (!file.exists(MMFileName))
     fmuData <- read.csv(paste("./tests/OSM/", row$Filename, sep=""))
     df <- osm$Simulate(fmuData, outputRequestList, variant, 80, 5)
 
-    scriptResult <- osm$PrepareScriptResult(df)
-
-    metaModel$addScriptResult(row$initialAgeYr, scriptResult)
+    metaModel$addScriptResult(row$initialAgeYr, df)
   }
 
   possibleOutputTypes <- metaModel$getPossibleOutputTypes()

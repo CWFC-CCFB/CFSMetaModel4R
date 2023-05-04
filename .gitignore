@@ -43,6 +43,8 @@ vignettes/*.pdf
 *.dll
 *.so
 *.o
+*.log
+*.log.lck
 /.metadata/
 inst/doc
 man
@@ -51,3 +53,10 @@ man
 inst/outputs/*
 !inst/outputs/reference
 
+/J4RTmpFile
+/tests/OSM/*.json
+/tests/OSM/*.zml
+/tests/Capsis/*.json
+/tests/Capsis/*.zml
+/tests/FVS/*.json
+/tests/FVS/*.zml

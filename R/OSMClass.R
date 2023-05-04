@@ -166,31 +166,9 @@ new_OSMClass <- function(host) {
 
                   resultJSON <- fromJSON(result)
 
-                  osmResult <- new_OSMResult(resultJSON)
+                  osmResult <- new_SimulationResult(resultJSON)
 
                   return(osmResult)
-                },
-                assign.env = me)
-
-  delayedAssign("PrepareScriptResult",
-                function(osmSimResults) {
-                  .connectToJ4R() # must be connected to J4R to create a ScriptResult instance
-
-                  dfAggregated <- osmSimResults$AggregateResults()
-
-                  dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyReducedDataSet")
-                  for (i in 1:nrow(dfAggregated))
-                  {
-                    jarray <- J4R::createJavaObject("java.lang.Object", ncol(dfAggregated), isArray = TRUE)
-                    J4R::setValueInArray(jarray, as.character(dfAggregated[i,]))
-                    dataSet$addObservation(jarray)
-                  }
-
-                  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", osmSimResults$climateChangeScenario)
-
-                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", osmSimResults$nbRealizations, osmSimResults$nbPlots, climateChangeScenario, osmSimResults$growthModel, dataSet)
-
-                  return(scriptResult)
                 },
                 assign.env = me)
 

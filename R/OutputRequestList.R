@@ -25,9 +25,9 @@
 #' }
 #'
 #' @export
-new_OSMOutputRequestList <- function() {
+new_OutputRequestList <- function() {
   me <- new.env(parent = emptyenv())
-  class(me) <- c("OSMOutputRequestList")
+  class(me) <- c("OutputRequestList")
   me$orList <- list()
   delayedAssign("addOutputRequest",
                 function(statusClass, variable, aggregrationPatterns) {

@@ -103,7 +103,8 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 
   delayedAssign("addScriptResult",
                 function(initialAge, scriptResult) {
-                  me$.metaModel$addScriptResult(as.integer(initialAge), scriptResult)
+                  scriptResultJava <- me$prepareScriptResult(scriptResult)
+                  me$.metaModel$addScriptResult(as.integer(initialAge), scriptResultJava)
                   return(invisible(NULL))
                 },
                 assign.env = me)
@@ -262,6 +263,34 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                   return(plot)
                 },
                 assign.env = me)
+
+  delayedAssign("prepareScriptResult",
+                function(simResults) {
+
+                  if ("TotalVariance" %in% colnames(simResults$dataSet))
+                  {
+                    dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyDataSet")
+                  }
+                  else
+                  {
+                    dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyReducedDataSet")
+                  }
+
+                  for (i in 1:nrow(simResults$dataSet))
+                  {
+                    jarray <- J4R::createJavaObject("java.lang.Object", ncol(simResults$dataSet), isArray = TRUE)
+                    J4R::setValueInArray(jarray, as.character(simResults$dataSet[i,]))
+                    dataSet$addObservation(jarray)
+                  }
+
+                  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", simResults$climateChangeScenario)
+
+                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", simResults$nbRealizations, simResults$nbPlots, climateChangeScenario, simResults$growthModel, dataSet)
+
+                  return(scriptResult)
+                },
+                assign.env = me)
+
   return(me)
 }
 
