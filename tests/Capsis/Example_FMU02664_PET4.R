@@ -77,6 +77,14 @@ if (!file.exists(MMFileName))
     fmuData <- read.csv(csvFilename)
 
     taskID <- capsis$Simulate(fmuData, outputRequestList, variant, 80, 5, TRUE, 500, "NoChange", "Stand", fieldMatches)
+    while (is.null(taskID)) # a null taskID means that the server cannot process a new simulation yet, so let's way until it can
+    {
+      Sys.sleep(0.1)
+
+      taskID <- capsis$Simulate(fmuData, outputRequestList, variant, 80, 5, TRUE, 500, "NoChange", "Stand", fieldMatches)
+    }
+
+    print(paste("Started processing for ", row$Filename))
 
     taskIDList[i] <- taskID
   }

@@ -155,6 +155,10 @@ new_CapsisClass <- function(host) {
                   url <- paste(me$host, me$endpoint, "Simulate", sep="/")
                   r <- POST( url, query = list(years = as.character(years), variant = variant, initialYear = as.character(initialYear), isStochastic=as.logical(isStochastic), nbRealizations = as.integer(nbRealizations), climateChange = as.character(climateChange), applicationScale = as.character(applicationScale), fieldMatches=as.character(fieldMatchesJSON)), body = list(data=csvData, output=outputRequestListJSON), encode = "multipart" )
 
+                  # if the CapsisWebAPI cannot launch this request, it informs us by returning code HTTP error 429 "too many requests".  in this case, return NULL
+                  if (r$status_code == 429)
+                    return (NULL)
+
                   if (r$status_code != 200)
                   {
                     stop(content(r, "text"))
