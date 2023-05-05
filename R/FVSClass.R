@@ -168,7 +168,7 @@ new_FVSClass <- function(host) {
 
                   resultJSON <- fromJSON(result)
 
-                  osmResult <- new_OSMResult(resultJSON)
+                  osmResult <- new_SimulationResult(resultJSON)
 
                   return(osmResult)
                 },
