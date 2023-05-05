@@ -46,8 +46,9 @@ inventory <- "PET4"
 
 stratumGroupID <- "FMU01152"
 
+# uncomment the following line to force J4R to be connected to an existing J4R server instead of starting a new one
+#J4R::connectToJava(port = 18000, internalPort = 50000:50001, public=T, key=212)
 
-J4R::connectToJava(port = 18000, internalPort = 50000:50001, public=T, key=212)
 metaModel <- new_MetaModel(stratumGroupID, "geoDomain", "dataSource")
 
 MMFileName <- paste(getwd(), "tests", "Capsis", "FittedMetamodel_Coniferous_AllAlive_FMU02664.zml", sep = "/")

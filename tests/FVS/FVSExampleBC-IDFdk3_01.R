@@ -8,6 +8,9 @@ rm(list=ls())
 library(CFSMetaModel4R)
 #library(jsonlite)
 
+# uncomment the following line to force J4R to be connected to an existing J4R server instead of starting a new one
+#J4R::connectToJava(port = 18000, internalPort = 50000:50001, public=T, key=212)
+
 metaModel <- new_MetaModel("IDFdk3/01", "geoDomain", "dataSource")
 
 #data("OSMThreeStandList")
@@ -44,11 +47,12 @@ for (ageCl in unique(plotData$ageClass)) {
   }
   data <- treeData[which(treeData$PlotID %in%unique(plotData.AgeCl$PlotID)),]
   df <- fvs$Simulate(data, outputRequestList, variant, standInfo, 80, 5, 2023)
-  scriptResult <- fvs$PrepareScriptResult(df)
-  metaModel$addScriptResult(ageCl, scriptResult)
+  metaModel$addScriptResult(ageCl, df)
 }
 
 possibleOutputTypes <- metaModel$getPossibleOutputTypes()
 metaModel$fitModel(possibleOutputTypes[2], TRUE)
 
-cat(metaModel$getSummary())
+metaModel$getSummary()
+
+print(metaModel$plot(ymax = 350))

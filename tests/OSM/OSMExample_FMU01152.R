@@ -7,7 +7,9 @@ rm(list=ls())
 library(CFSMetaModel4R)
 #library(jsonlite)
 
-J4R::connectToJava(port = 18000, internalPort = 50000:50001, public=T, key=212)
+# uncomment the following line to force J4R to be connected to an existing J4R server instead of starting a new one
+#J4R::connectToJava(port = 18000, internalPort = 50000:50001, public=T, key=212)
+
 stratumGroupID <- "FMU01152"
 metaModel <- new_MetaModel(stratumGroupID, "geoDomain", "dataSource")
 #metaModel <- J4R::createJavaObject("repicea.simulation.metamodel.MetaModel", stratumGroupID, "geoDomain", "dataSource")
