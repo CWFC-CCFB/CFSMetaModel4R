@@ -47,7 +47,7 @@ new_CapsisClass <- function(host) {
   class(me) <- c("CapsisClass")
   me$host <- host
   me$orList <- list()
-  me$endpoint <- c("CapsisSimulation")
+  me$endpoint <- c("CapsisWebAPI")
   delayedAssign("ConvertDataFrameToCSVString",
                 function(dataFrameInstance) {
                   outputVector <- sapply(1:nrow(dataFrameInstance), function(i) {paste(dataFrameInstance[i,], collapse= ",")})
