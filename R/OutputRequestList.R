@@ -1,11 +1,11 @@
 #'
-#' Constructor for the OSMOutputRequestList class.
+#' Constructor for the OutputRequestList class.
 #'
-#' @description This class holds data related to output requests and is used to prepare the ORList to be sent to the Simulate() call
+#' @description This class holds data related to output
+#' requests and is used to prepare the list to be sent
+#' to the Simulate() call.
 #'
-#' @return an S3 OSMOutputRequestList instance
-#'
-#'  TODO update documentation here
+#' @return an S3 OutputRequestList instance
 #'
 #' @details
 #'

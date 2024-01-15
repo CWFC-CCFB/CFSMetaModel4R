@@ -1,44 +1,29 @@
 #'
-#' A plot with two trees that can be passed to FVS Web API
-#'
-#' @docType data
-#'
-#' @usage data(FVSTreeListTwoTreesOnePlot)
-#'
-#' @keywords datasets
-#'
-#' @examples
-
-#'
 #' Constructor for the CapsisClass class.
 #'
-#' @description This class is the interface to the OSM http server.
+#' @description This class is the interface to the CAPSIS WEB API.
 #'
 #' @return an S3 CapsisClass instance
-#'
-#'  TODO update documentation here
 #'
 #' @details
 #'
 #' The class contains the following methods: \cr
 #' \itemize{
 #'
-#' \item \bold{ConvertDataFrameToCSVString(dataFrameInstance)} \cr
-#' Utility method to convert a dataframe to CSV string to be sent as input data to the server \cr
-#' \item dataFrameInstance - The status class to be requested (character, typically one of "Alive", "Dead" )
-#' \item variable - The variable to be requested (character, typically one of "Volume", "Biomass")
-#' \item aggregrationPatterns - A list of aggregation patterns to be used for the request (named List where the names are the aggregation groups, and the list data are the species)
-#'
-#'
-#' \item \bold{Simulate(data, outputRequestList, variant, years, ypc)} \cr
-#' Converts the current OSMOutputRequestList to a json string \cr
+#' \item \bold{Simulate(data, outputRequestList, variant, years, initialYear, isStochastic, nbRealizations, climateChange, applicationScale)} \cr
+#' Converts the current OutputRequestList to a json string \cr
+#' \itemize{
 #' \item data - a string in CSV format that represents the input data to run the simulation on
-#' \item outputRequestList - An object of type OSMOutputRequestList that contains the output data requested
+#' \item outputRequestList - An object of type OutputRequestList that contains the output data requested
 #' \item variant - A string containing the variant name to use for simulation
 #' \item years - An int containing the number of years the simulation should use
-#' \item ypc - An int containing the number of years per cycle the simulation should use
-
-#' Return character vector
+#' \item initialYear - The initial date of the simulation
+#' \item isStochastic - A logical (true to enable stochastic simulation)
+#' \item nbRealizations - An int containing the number of realizations in case of stochastic simulation [1-100]
+#' \item climateChange - A string indicating the climate change scenarion [NO_CHANGE, RCP2_6, RCP4_5, RCP6_0, RCP8_5]
+#' \item applicationScale - A string indicating the scale of the simulation [Stand, FMU]
+#' }
+#'
 #' }
 #'
 #' @export
@@ -47,16 +32,7 @@ new_CapsisClass <- function(host) {
   class(me) <- c("CapsisClass")
   me$host <- host
   me$orList <- list()
-  me$endpoint <- c("CapsisWebAPI")
-  delayedAssign("ConvertDataFrameToCSVString",
-                function(dataFrameInstance) {
-                  outputVector <- sapply(1:nrow(dataFrameInstance), function(i) {paste(dataFrameInstance[i,], collapse= ",")})
-                  outputVector <- c(paste(colnames(dataFrameInstance), collapse= ","), outputVector)
-                  outputString <- paste(outputVector, collapse = "\r\n")
-                  return(outputString)
-                },
-                assign.env = me)
-
+  me$endpoint <- c("CapsisSimulation")
   delayedAssign("VariantList",
                 function() {
                   url <- paste(me$host, me$endpoint, "VariantList", sep="/")
@@ -148,10 +124,11 @@ new_CapsisClass <- function(host) {
                 assign.env = me)
 
   delayedAssign("Simulate",
-                function(data, outputRequestList, variant, years, initialYear, isStochastic, nbRealizations, climateChange, applicationScale, fieldMatches) {
+                function(data, outputRequestList, variant, years, initialYear, isStochastic, nbRealizations, climateChange, applicationScale) {
                   outputRequestListJSON <- outputRequestList$toJSONString()
+                  fieldMatches <- .GetFieldMatches(data, me$VariantFields(variant))
                   fieldMatchesJSON <- toJSON(fieldMatches, auto_unbox=TRUE)
-                  csvData <- me$ConvertDataFrameToCSVString(data)
+                  csvData <- .ConvertDataFrameToCSVString(data)
                   url <- paste(me$host, me$endpoint, "Simulate", sep="/")
                   r <- POST( url, query = list(years = as.character(years), variant = variant, initialYear = as.character(initialYear), isStochastic=as.logical(isStochastic), nbRealizations = as.integer(nbRealizations), climateChange = as.character(climateChange), applicationScale = as.character(applicationScale), fieldMatches=as.character(fieldMatchesJSON)), body = list(data=csvData, output=outputRequestListJSON), encode = "multipart" )
 
@@ -166,13 +143,29 @@ new_CapsisClass <- function(host) {
 
                   result <- content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  taskId <- fromJSON(result)
 
-                  return(resultJSON)
+                  status <- capsis$TaskStatus(taskId)
+                  firstTime <- T
+                  while (status$code == "IN_PROGRESS")
+                  {
+                    if (firstTime) {
+                      messageStr <- status$code
+                      firstTime <- F
+                    } else {
+                      messageStr <- "."
+                    }
+                    message(messageStr, appendLF = F)
+                    Sys.sleep(2)
+                    status <- capsis$TaskStatus(taskId)
+                  }
 
-                  #osmResult <- new_OSMResult(resultJSON)
+                  message(paste(status$code))
 
-                  #return(osmResult)
+                  if (status$code != "COMPLETED") {
+                    stop(paste("Error while processing ", row$Filename, " with error code : ", status$code, sep=""))
+                  }
+                  return(status$result)
                 },
                 assign.env = me)
 
@@ -225,6 +218,37 @@ new_CapsisClass <- function(host) {
 
   return(me)
 }
+
+
+.ConvertDataFrameToCSVString <- function(dataFrameInstance) {
+  outputVector <- sapply(1:nrow(dataFrameInstance), function(i) {paste(dataFrameInstance[i,], collapse= ",")})
+  outputVector <- c(paste(colnames(dataFrameInstance), collapse= ","), outputVector)
+  outputString <- paste(outputVector, collapse = "\r\n")
+  return(outputString)
+}
+
+
+.GetFieldMatches <- function(dataFrameObj, fieldList) {
+  availableFields <- colnames(dataFrameObj)
+  matches <- c()
+  for (i in 1:nrow(fieldList)) {
+    fieldName <- fieldList[i,"name"]
+    index <- which(availableFields == fieldName)
+    if (length(index) == 0) {
+      if (fieldList[i, "isOptional"]) {
+        matches <- c(matches, -1)
+      } else { # field is mandatory
+        stop(paste("Field", fieldName, "cannot be found! Check the required field using capsis$VariantFields(variant) function."))
+      }
+    } else {
+      matches <- c(matches, index - 1)
+    }
+  }
+  return(matches)
+}
+
+
+
 
 #'
 #' Constructor for the OSMResult class.
