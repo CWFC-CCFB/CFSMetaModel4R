@@ -30,10 +30,10 @@ new_OutputRequestList <- function() {
   class(me) <- c("OutputRequestList")
   me$orList <- list()
   delayedAssign("addOutputRequest",
-                function(statusClass, variable, aggregrationPatterns) {
+                function(requestType, aggregrationPatterns) {
 
                   or <- list()
-                  or[["requestType"]] <- list(statusClass = statusClass, variable = variable)
+                  or[["requestType"]] <- requestType
                   or[["aggregationPatterns"]] <- aggregrationPatterns
 
                   me$orList[[length(me$orList) + 1]] <- or

@@ -9,7 +9,7 @@ library(CFSMetaModel4R)
 capsis <- new_CapsisClass("http://repicea.dynu.net")
 
 variantList <- capsis$VariantList()
-variant <- variantList[[1]]
+variant <- variantList[1]
 
 fieldsList <- capsis$VariantFields(variant)
 
@@ -31,10 +31,10 @@ if (!file.exists(MMFileName)) {
   speciesBroadleaved <- capsis$VariantSpecies(variant, FALSE, "Broadleaved")
 
   # create output requests
-  outputRequestTypes <- capsis$OutputRequestTypes()
+  outputRequestTypes <- capsis$OutputRequestTypes(variant)
   print(outputRequestTypes)
   outputRequestList <- new_OutputRequestList()
-  outputRequestList$addOutputRequest(outputRequestTypes$statusClass[[1]], outputRequestTypes$variable[[1]], list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved, EPX = I(c("EPX"))))
+  outputRequestList$addOutputRequest("AliveVolume", list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved, EPX = I(c("EPX"))))
   fmuList <- read.csv("./tests/Capsis/FMU02664.csv")
 
   for (i in 1:nrow(fmuList)) {

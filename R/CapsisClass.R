@@ -85,10 +85,10 @@ new_CapsisClass <- function(host) {
                 assign.env = me)
 
   delayedAssign("OutputRequestTypes",
-                function() {
+                function(variant) {
                   url <- paste(me$host, me$endpoint, "OutputRequestTypes", sep="/")
 
-                  r <- GET( url, query = list());
+                  r <- GET( url, query = list(variant = variant));
 
                   if (r$status_code != 200)
                   {
@@ -163,7 +163,7 @@ new_CapsisClass <- function(host) {
                   message(paste(status$code))
 
                   if (status$code != "COMPLETED") {
-                    stop(paste("Error while processing ", row$Filename, " with error code : ", status$code, sep=""))
+                    stop(paste("Error while processing with error code:", status$result))
                   }
                   return(status$result)
                 },
@@ -171,7 +171,6 @@ new_CapsisClass <- function(host) {
 
   delayedAssign("TaskStatus",
                 function(taskID) {
-                  outputRequestListJSON <- outputRequestList$toJSONString()
                   url <- paste(me$host, me$endpoint, "TaskStatus", sep="/")
                   r <- GET( url, query = list(taskID = as.character(taskID)))
 
@@ -184,14 +183,16 @@ new_CapsisClass <- function(host) {
 
                   resultJSON <- fromJSON(result)
 
-                  osmResult <- NULL
+                  simResult <- NULL
 
                   if (resultJSON$status == "COMPLETED")
                   {
-                    osmResult <- new_SimulationResult(resultJSON)
+                    simResult <- new_SimulationResult(resultJSON)
+                  } else if (resultJSON$status == "ERROR") {
+                    return(list(code=resultJSON$status, result = resultJSON$errorMessage))
                   }
 
-                  return(list(code=resultJSON$status, result = osmResult))
+                  return(list(code=resultJSON$status, result = simResult))
                 },
                 assign.env = me)
 
