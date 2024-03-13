@@ -4,83 +4,124 @@
 #' @description A MetaModel instance contains a pointer to a Java instance. It
 #' also implements many methods which are described below.
 #'
+#' @param stratumGroup - a descriptor of the population (e.g. RE3 potential
+#' vegetation)
+#' @param geoDomain - a descriptor of the location (e.g. 3OUEST)
+#' @param dataSource - adescriptor of the data source (e.g. PET4)
 #' @return an S3 MetaModel instance
-#'
-#'  TODO update documentation here
 #'
 #' @details
 #'
 #' The class contains the following methods: \cr
 #' \itemize{
 #'
-#' \item \bold{getVersion()} \cr
-#' Provide the version numbers CAPSIS and Capsis4R \cr
-#' Return a List
+#' \item \bold{getStratumGroup()} \cr
+#' Provide the stratum group the meta-model was fitted to \cr
+#' Return a character string
 #'
-#' \item \bold{getModelDataFields()} \cr
-#' Enumerate the model data fields expected by the server.  Use this to create the index array send through the setFieldMatches method. \cr
-#' Return A vector of strings containing all the fields as triplets separated by ";" ex : "PLOT (mandatory); String; Match: 0       1"
+#' \item \bold{hasConverged()} \cr
+#' Check if the meta-model has comverged. \cr
+#' Return a logical
 #'
-#' \item \bold{setInitialParameters(initialDateYear, stochasticMode, numberOfRealizations, applicationScale, climateChangeOption)} \cr
-#' Set initial model parameters.  Must be called prior to calling runSimulation. \cr
-#' Parameters are \cr
+#' \item \bold{addScriptResult(initialAge, scriptResult)} \cr
+#' Add a simulation script result to the meta-model. Those are the simulation result
+#' particular model. \cr
+#' Arguments are \cr
 #' \itemize{
 #' \item initialDateYear - The initial year to be used for simulation (numeric)
-#' \item stochasticMode - Enable stochastic mode simulation (1 = enabled, 0 = disable)
-#' \item numberOfRealizations - The number of realizations to be used for simulation (numeric)
-#' \item applicationScale - The application scale, possible values are ["FMU", "Stand"]
-#' \item climateChangeOption - A climate change option, possible values are ["NoChange", "Plus2Degrees", "Plus4Degrees", "Plus6Degrees"]
+#' \item scriptResult - A SimulationResult object (see the SimulationResult class)
 #' }
 #' Return nothing
 #'
-#' \item \bold{setEvolutionParameters(finalDateYear)} \cr
-#' Set evolution parameters.  Must be called prior to calling runSimulation \cr
-#' Parameters are \cr
+#' \item \bold{getPossibleOutputTypes()} \cr
+#' Provide the output type of the simulation. That is the possible dependent
+#' variables of an eventual meta-model. \cr
+#' Return a vector of character strings
+#'
+#' \item \bold{fitModel(outputType, enableMixedModelImplementations,
+#' randomGridSize = 10000,
+#' nbBurnIn = 10000,
+#' nbAcceptedRealizations = 500000 + nbBurnIn,
+#' oneEach = 50)} \cr
+#' Fit a metamodel to a particular output type. \cr
+#' Arguments are \cr
 #' \itemize{
-#' \item finalDateYear - The final year to be used for simulation
+#' \item outputType - The dependent variable of the meta-model
+#' \item enableMixedModelImplementations - A logical
+#' \item randomGridSize - The number of random trial in order to find the
+#' starting values for the parameters
+#' \item nbBurnIn - The number of burn-in realizations
+#' \item nbAcceptedRealizations - The number of realizations in the chain
+#' before filtering for the final sample
+#' \item onEach - The selection rate for the final sample
+#' }
+#' Provide the parameter estimates in the console
+#'
+#' \item \bold{getPredictions(ageYr, timeSinceInitialDateYr, varianceOutputType)} \cr
+#' Provide predictions of the meta-model. \cr
+#' Arguments are \cr
+#' \itemize{
+#' \item ageYr - a vector of positive integers
+#' \item timeSinceInitialDateYr - Any value (is useless at the moment)
+#' \item varianceOutputType - a string either NONE, PARAMEST (error on the mean),
+#' PARAMESTRE (error on the mean + random effect)
+#' }
+#' Return a data.frame object
+#'
+#' \item \bold{getMonteCarloPredictions(ageYr, timeSinceInitialDateYr, nbSubjects,
+#' nbRealizations)} \cr
+#' Provide stochastic predictions of the meta-model. \cr
+#' Arguments are \cr
+#' \itemize{
+#' \item ageYr - a vector of positive integers
+#' \item timeSinceInitialDateYr - Any value (is useless at the moment)
+#' \item nbSubjects - the number of subject (typically strata)
+#' \item nbRealizations - the number of realizations
+#' }
+#' Return a data.frame object
+#'
+#' \item \bold{getSelectedOutputType()} \cr
+#' Provide the output type of this meta-model. \cr
+#' Return a character string
+#'
+#' \item \bold{getFinalDataSet()} \cr
+#' Provide the individual stratum simulation and the meta-model predictions.
+#' Return a data.frame object
+#'
+#' \item \bold{load(filename)} \cr
+#' Load a meta-model from file. \cr
+#' Arguments are \cr
+#' \itemize{
+#' \item filename - The name of the file that contains the meta-model instance
 #' }
 #' Return nothing
 #'
-#' \item \bold{getSpeciesOfType(types)} \cr
-#' Get the list of species of the specified type. \cr
-#' Parameters are \cr
+#' \item \bold{save(filename)} \cr
+#' Save a meta-model to file. \cr
+#' Arguments are \cr
 #' \itemize{
-#' \item types - The types to get the list of species for (vector)
-#' }
-#' Return a vector containing all the names of the species for all input types
-#'
-#' \item \bold{registerOutputRequest(request, aggregationPatterns)} \cr
-#' Register a request for a particular output of the simulation. \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item request - The request to register
-#' \item aggregationPatterns - The aggregation patterns to register
+#' \item filename - The name of the file that will contain the meta-model instance
 #' }
 #' Return nothing
 #'
-#' \item \bold{setFieldMatches(matches)} \cr
-#' Set field matches for input data.  Must be called prior to calling sendData. \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item matches - A vector of integere specifying the field match order to be used by the server when interpreting CBSendData calls.
-#' }
-#' Return TRUE if operation succeed
-#'
-#' \item \bold{sendData(data)} \cr
-#' Send data to the CAPSIS Server.  Must be called prior to calling runSimulation. \cr
-#' Parameters are \cr
-#' \itemize{
-#' \item data - A data.frame object whose rows are to be read by CAPSIS
-#' }
+#' \item \bold{getSummary} \cr
+#' Display the parameter estimates and other information on the meta-model in
+#' the console. \cr
 #' Return nothing
 #'
-#' \item \bold{runSimulation()} \cr
-#' Run the simulation on the CAPSIS model \cr
-#' Return the simulation results
-#'
-#' \item \bold{closeProject()} \cr
-#' Close the active project and free its resources \cr
+#' \item \bold{getModelComparison} \cr
+#' Display the comparison between the different meta-model implementations in
+#' the console. \cr
 #' Return nothing
+#'
+#' \item \bold{plotFit} \cr
+#' Provide a graph of the goodness of fit of the meta-model. \cr
+#' Return a ggplot2 graph
+#'
+#' \item \bold{plotChain} \cr
+#' Provide a graph of the loglikelihood of the different realizations of the
+#' final sample. \cr
+#' Return a ggplot2 graph
 #' }
 #'
 #' @export
@@ -103,7 +144,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 
   delayedAssign("addScriptResult",
                 function(initialAge, scriptResult) {
-                  scriptResultJava <- me$prepareScriptResult(scriptResult)
+                  scriptResultJava <- .prepareScriptResult(scriptResult)
                   me$.metaModel$addScriptResult(as.integer(initialAge), scriptResultJava)
                   return(invisible(NULL))
                 },
@@ -116,16 +157,40 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 assign.env = me)
 
   delayedAssign("fitModel",
-                function(outputType, enableMixedModelImplementations) {
+                function(outputType,
+                         enableMixedModelImplementations,
+                         randomGridSize = 10000,
+                         nbBurnIn = 10000,
+                         nbAcceptedRealizations = 500000 + nbBurnIn,
+                         oneEach = 50) {
+                  simParms <- me$.metaModel$getMetropolisHastingsParameters()
+                  if (randomGridSize < 1) {
+                    warning("Random grid size argument is inconsistent. Default value will be used instead.")
+                  } else {
+                    message(paste("Random grid size =", randomGridSize))
+                    simParms$nbInitialGrid <- as.integer(randomGridSize)
+                  }
+                  if (nbBurnIn < 1) {
+                    warning("Number of burn in realizations is inconsistent. Default value will be used instead.")
+                  } else {
+                    message(paste("Number of burn in realizations =", nbBurnIn))
+                    simParms$nbBurnIn <- as.integer(nbBurnIn)
+                  }
+                  if (nbAcceptedRealizations < nbBurnIn) {
+                    warning("Number of accepted realizations is inconsistent. Default value will be used instead.")
+                  } else {
+                    message(paste("Number of accepted realizations =", nbAcceptedRealizations))
+                    simParms$nbAcceptedRealizations <- as.integer(nbAcceptedRealizations)
+                  }
+                  if (oneEach < 1 | oneEach > nbAcceptedRealizations) {
+                    warning("Rate of final selection (oneEach argument) is inconsistent. Default value will be used instead.")
+                  } else {
+                    message(paste("Rate of final selection (oneEach argument) =", oneEach))
+                    simParms$oneEach <- as.integer(oneEach)
+                  }
                   message("Fitting candidate meta-models. This may take a while...")
                   me$.metaModel$fitModel(outputType, as.logical(enableMixedModelImplementations))
                   return(invisible(NULL))
-                },
-                assign.env = me)
-
-  delayedAssign("getPrediction",
-                function(ageYr, timeSinceInitialDateYr) {
-                  return (me$.metaModel$getPrediction(as.integer(ageYr), as.integer(timeSinceInitialDateYr)))
                 },
                 assign.env = me)
 
@@ -133,25 +198,16 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 function(ageYr, timeSinceInitialDateYr, varianceOutputType) {
                   ageYrArray <- J4R::as.JavaArray(as.integer(ageYr))
                   varianceOutputEnum <- J4R::createJavaObject("repicea.simulation.metamodel.MetaModel$PredictionVarianceOutputType", varianceOutputType)
-                  return (me$.metaModel$getPredictions(ageYrArray, as.integer(timeSinceInitialDateYr), varianceOutputEnum))
+                  dataSetInstance <- me$.metaModel$getPredictions(ageYrArray, as.integer(timeSinceInitialDateYr), varianceOutputEnum)
+                  return(convertDataSet(dataSetInstance))
                 },
                 assign.env = me)
 
   delayedAssign("getMonteCarloPredictions",
                 function(ageYr, timeSinceInitialDateYr, nbSubjects, nbRealizations) {
-                  return (me$.metaModel$getMonteCarloPredictions(as.integer(ageYr), as.integer(timeSinceInitialDateYr), as.integer(nbSubjects), as.integer(nbRealizations)))
-                },
-                assign.env = me)
-
-  delayedAssign("getPredictionVariance",
-                function(ageYr, timeSinceInitialDateYr, includeRandomEffectVariance) {
-                  return(me$.metaModel$getPredictionVariance(as.integer(ageYr), as.integer(timeSinceInitialDateYr), as.logical(includeRandomEffectVariance)))
-                },
-                assign.env = me)
-
-  delayedAssign("exportFinalDataSet",
-                function(filename) {
-                  return(me$.metaModel$exportFinalDataSet(filename))
+                  ageYrArray <- J4R::as.JavaArray(as.integer(ageYr))
+                  dataSetInstance <- me$.metaModel$getMonteCarloPredictions(ageYrArray, as.integer(timeSinceInitialDateYr), as.integer(nbSubjects), as.integer(nbRealizations))
+                  return(convertDataSet(dataSetInstance))
                 },
                 assign.env = me)
 
@@ -191,14 +247,10 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 },
                 assign.env = me)
 
-  delayedAssign("plot",
+  delayedAssign("plotFit",
                 function(textsize = 20, plotPred = T, title = NULL, ymax = 250) {
                   dataset <- me$getFinalDataSet()
                   predictions <- NULL
-                  if (me$hasConverged())
-                  {
-                    #predictions <- javaMetamodel$GetPredictions()
-                  }
 
                   isVarianceAvailable <- "TotalVariance" %in% colnames(dataset)
 
@@ -254,44 +306,44 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                     plot <- plot + ggplot2::geom_ribbon(ggplot2::aes(ymin=predL95, ymax=predU95, x=age), datasetPred, alpha = .5) +
                       ggplot2::geom_line(ggplot2::aes(y=pred, x=age), datasetPred, lty = "solid", size = 1.5)
                   }
-                  if (!is.null(predictions)) {
-                    predictions$predL95 <- predictions$predictions - predictions$predictionVariance^.5 * qnorm(0.975)
-                    predictions$predU95 <- predictions$predictions + predictions$predictionVariance^.5 * qnorm(0.975)
-                    plot <- plot + ggplot2::geom_ribbon(ggplot2::aes(ymin=predL95, ymax=predU95, x=ageYr), predictions, alpha = .5) +
-                      ggplot2::geom_line(ggplot2::aes(y=predictions, x=ageYr), predictions, lty = "solid", size = 1.5)
-                  }
                   return(plot)
                 },
                 assign.env = me)
 
-  delayedAssign("prepareScriptResult",
-                function(simResults) {
+  delayedAssign("plotChain",
+                function() {
+                  markovChain <- convertDataSet(me$.metaModel$convertMetropolisHastingsSampleToDataSet())
+                  markovChain$i <- 1:nrow(markovChain)
 
-                  if ("TotalVariance" %in% colnames(simResults$dataSet))
-                  {
-                    dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyDataSet")
-                  }
-                  else
-                  {
-                    dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyReducedDataSet")
-                  }
-
-                  for (i in 1:nrow(simResults$dataSet))
-                  {
-                    jarray <- J4R::createJavaObject("java.lang.Object", ncol(simResults$dataSet), isArray = TRUE)
-                    J4R::setValueInArray(jarray, as.character(simResults$dataSet[i,]))
-                    dataSet$addObservation(jarray)
-                  }
-
-                  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", simResults$climateChangeScenario)
-
-                  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", simResults$nbRealizations, simResults$nbPlots, climateChangeScenario, simResults$growthModel, dataSet)
-
-                  return(scriptResult)
+                  chainPlot <- ggplot2::ggplot() + ggplot2::geom_point(ggplot2::aes(x=i,y=LLK), data=markovChain)
+                  return(chainPlot)
                 },
                 assign.env = me)
-
   return(me)
 }
 
+
+.prepareScriptResult <- function(simResults) {
+  if ("TotalVariance" %in% colnames(simResults$dataSet))
+  {
+    dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyDataSet")
+  }
+  else
+  {
+    dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyReducedDataSet")
+  }
+
+  for (i in 1:nrow(simResults$dataSet))
+  {
+    jarray <- J4R::createJavaObject("java.lang.Object", ncol(simResults$dataSet), isArray = TRUE)
+    J4R::setValueInArray(jarray, as.character(simResults$dataSet[i,]))
+    dataSet$addObservation(jarray)
+  }
+
+  climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", simResults$climateChangeScenario)
+
+  scriptResult <- J4R::createJavaObject("repicea.simulation.scriptapi.ScriptResult", simResults$nbRealizations, simResults$nbPlots, climateChangeScenario, simResults$growthModel, dataSet)
+
+  return(scriptResult)
+}
 

@@ -1,21 +1,16 @@
 #'
-#' Constructor for the OSMResult class.
+#' Constructor for the SimulationResult class.
 #'
-#' @description This class extracts data received from JSON OSM simulate() calls to allow later scriptResult conversion
+#' @description This class converts the JSON result of a simulate call
+#' into a SimulationResult instance
 #'
-#' @return an S3 OSMResult instance
+#' @param resultJSON a JSON result from a simulate call
 #'
-#'  TODO update documentation here
+#' @return an S3 SimulationResult instance
 #'
 #' @details
-#'
-#' The class contains the following methods: \cr
-#' \itemize{
-#'
-#' \item \bold{AggregateResults()} \cr
-#' Aggregates results to return only the average value for all plots \cr
-#'
-#' }
+#' The constructor automatically detects whether the
+#' simulation results need to be aggregated.
 #'
 #' @export
 new_SimulationResult <- function(resultJSON)

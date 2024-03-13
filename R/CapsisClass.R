@@ -27,7 +27,7 @@
 #' }
 #'
 #' @export
-new_CapsisClass <- function(host) {
+new_CapsisClass <- function(host = "http://repicea.dynu.net") {
   me <- new.env(parent = emptyenv())
   class(me) <- c("CapsisClass")
   me$host <- host
