@@ -52,6 +52,25 @@ new_CapsisClass <- function(host = "http://repicea.dynu.net") {
                 },
                 assign.env = me)
 
+  delayedAssign("CapsisStatus",
+                function() {
+                  url <- paste(me$host, me$endpoint, "CapsisStatus", sep="/")
+
+                  r <- GET( url, query = list());
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return (resultJSON)
+                },
+                assign.env = me)
+
   delayedAssign("VariantSpecies",
                 function(variant, outputAsVector, speciesType) {
                   url <- paste(me$host, me$endpoint, "VariantSpecies", sep="/")

@@ -49,7 +49,7 @@
 #' \item outputType - The dependent variable of the meta-model
 #' \item enableMixedModelImplementations - A logical
 #' \item randomGridSize - The number of random trial in order to find the
-#' starting values for the parameters
+#' starting values for the parameters (0 to disable the grid)
 #' \item nbBurnIn - The number of burn-in realizations
 #' \item nbAcceptedRealizations - The number of realizations in the chain
 #' before filtering for the final sample
@@ -122,6 +122,23 @@
 #' Provide a graph of the loglikelihood of the different realizations of the
 #' final sample. \cr
 #' Return a ggplot2 graph
+#'
+#' \item \bold{plotParameterEstimates} \cr
+#' Provide a histogram for each parameter estimate. \cr
+#' Return a list of ggplot2 graph
+#'
+#' \item \bold{convertScriptResultsIntoDataSet} \cr
+#' Provide the script results in a dataset. \cr
+#' Return a data.frame object
+#'
+#' \item \bold{setStartingValuesForThisModelImplementation} \cr
+#' Set the starting values of the parameters for a particular model implementation. \cr
+#' Arguments are \cr
+#' \itemize{
+#' \item modelImpl - A string that stands for the model implementation (e.g. ChapmanRichardsDerivativeWithRandomEffect)
+#' \item startingValues - A StartingValues instance
+#' }
+#' Return a data.frame object
 #' }
 #'
 #' @export
@@ -164,30 +181,31 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                          nbAcceptedRealizations = 500000 + nbBurnIn,
                          oneEach = 50) {
                   simParms <- me$.metaModel$getMetropolisHastingsParameters()
-                  if (randomGridSize < 1) {
-                    warning("Random grid size argument is inconsistent. Default value will be used instead.")
+
+                  if (randomGridSize < 0) {
+                    warning("Random grid size argument is inconsistent. Previous value will be used instead.")
                   } else {
-                    message(paste("Random grid size =", randomGridSize))
                     simParms$nbInitialGrid <- as.integer(randomGridSize)
                   }
+
                   if (nbBurnIn < 1) {
-                    warning("Number of burn in realizations is inconsistent. Default value will be used instead.")
+                    warning("Number of burn in realizations is inconsistent. Previous value will be used instead.")
                   } else {
-                    message(paste("Number of burn in realizations =", nbBurnIn))
                     simParms$nbBurnIn <- as.integer(nbBurnIn)
                   }
+
                   if (nbAcceptedRealizations < nbBurnIn) {
-                    warning("Number of accepted realizations is inconsistent. Default value will be used instead.")
+                    warning("Number of accepted realizations is inconsistent. Previous value will be used instead.")
                   } else {
-                    message(paste("Number of accepted realizations =", nbAcceptedRealizations))
                     simParms$nbAcceptedRealizations <- as.integer(nbAcceptedRealizations)
                   }
+
                   if (oneEach < 1 | oneEach > nbAcceptedRealizations) {
-                    warning("Rate of final selection (oneEach argument) is inconsistent. Default value will be used instead.")
+                    warning("Rate of final selection (oneEach argument) is inconsistent. Previous value will be used instead.")
                   } else {
-                    message(paste("Rate of final selection (oneEach argument) =", oneEach))
                     simParms$oneEach <- as.integer(oneEach)
                   }
+                  message(simParms$toString())
                   message("Fitting candidate meta-models. This may take a while...")
                   me$.metaModel$fitModel(outputType, as.logical(enableMixedModelImplementations))
                   return(invisible(NULL))
@@ -319,9 +337,55 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                   return(chainPlot)
                 },
                 assign.env = me)
+
+  delayedAssign("plotParameterEstimates",
+                function() {
+                  output <- list()
+                  markovChain <- convertDataSet(me$.metaModel$convertMetropolisHastingsSampleToDataSet())
+                  parmNames <- colnames(markovChain)[2:length(colnames(markovChain))]
+                  markovChain$i <- 1:nrow(markovChain)
+                  for (parm in parmNames) {
+                    data.tmp <- markovChain[,c("i", parm)]
+                    colnames(data.tmp)[2] <- "parm"
+                    plot <- ggplot2::ggplot() +
+                      ggplot2::geom_histogram(ggplot2::aes(x=parm), data=data.tmp) +
+                      ggplot2::xlab(parm)
+                    output[[parm]] <- plot
+                  }
+                  return(output)
+                },
+                assign.env = me)
+
+  delayedAssign("convertScriptResultsIntoDataSet",
+                function(initialAge, scriptResult) {
+                  datasetObject <- me$.metaModel$convertScriptResultsIntoDataSet()
+                  return(convertDataSet(datasetObject))
+                },
+                assign.env = me)
+
+  delayedAssign("getParameterFieldNames",
+                function() {
+                  inputParameterMapKeys <- J4R::getAllValuesFromArray(J4R::callJavaMethod("repicea.simulation.metamodel.ParametersMapUtilities$InputParametersMapKey", "values"))
+                  return(inputParameterMapKeys$name())
+                },
+                assign.env = me)
+
+  delayedAssign("setStartingValuesForThisModelImplementation",
+                function(modelImpl, startingValues) {
+                  if (!("StartingValues" %in% class(startingValues))) {
+                    stop("The startingValues parameter should be an instance of the StartingValues class.")
+                  }
+                  modelImplEnum <- J4R::createJavaObject("repicea.simulation.metamodel.MetaModel$ModelImplEnum", modelImpl)
+                  jsonStr <- startingValues$toJSONString()
+                  message(paste("Setting parameters of", modelImplEnum$name()))
+                  message(jsonStr)
+                  me$.metaModel$setStartingValuesForThisModelImplementation(modelImplEnum, jsonStr)
+                  return(invisible(NULL))
+                },
+                assign.env = me)
+
   return(me)
 }
-
 
 .prepareScriptResult <- function(simResults) {
   if ("TotalVariance" %in% colnames(simResults$dataSet))
@@ -339,6 +403,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
     J4R::setValueInArray(jarray, as.character(simResults$dataSet[i,]))
     dataSet$addObservation(jarray)
   }
+  dataSet$indexFieldType()
 
   climateChangeScenario <- J4R::callJavaMethod("repicea.simulation.climate.REpiceaClimateGenerator$ClimateChangeScenarioHelper", "getClimateChangeScenarioFromString", simResults$climateChangeScenario)
 
@@ -347,3 +412,41 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
   return(scriptResult)
 }
 
+
+#'
+#' Constructor for the StartingValues class.
+#'
+#' @description The parameter starting values for a particular model implementation.
+#'
+#' @param Parameter - a vector of characters that stands for the parameter names
+#' @param StartingValue - a vector of numerics
+#' @param Distribution - a vector of characters that stands for the prior distributions
+#' @param DistParms - a vector of lists containing the parameters of the prior distributions
+#' @return an S3 StartingValues instance
+#'
+#' @details
+#'
+#' The class contains the following methods: \cr
+#' \itemize{
+#'
+#' \item \bold{toJSONString()} \cr
+#' Provide a JSON representation of this object \cr
+#' Return a character string
+#' }
+#'
+#' @export
+new_StartingValues <- function(Parameter, StartingValue, Distribution, DistParms) {
+  me <- new.env(parent = emptyenv())
+  class(me) <- c("MetaModel")
+  me$.startingValues <- data.frame(Parameter = Parameter, StartingValue = StartingValue, Distribution = Distribution)
+  me$.startingValues$DistParms <- DistParms
+  class(me) <- c("StartingValues")
+  delayedAssign("toJSONString",
+                function() {
+                  jsonStr <- toJSON(me$.startingValues)
+                  class(jsonStr) <- "character"
+                  return(jsonStr)
+                },
+                assign.env = me)
+  return(me)
+}

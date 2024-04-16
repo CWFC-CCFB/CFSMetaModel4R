@@ -8,6 +8,7 @@ library(CFSMetaModel4R)
 
 capsis <- new_CapsisClass("http://repicea.dynu.net")
 
+capsis$CapsisStatus()
 variantList <- capsis$VariantList()
 variant <- variantList[1]
 
@@ -33,8 +34,11 @@ if (!file.exists(MMFileName)) {
   # create output requests
   outputRequestTypes <- capsis$OutputRequestTypes(variant)
   print(outputRequestTypes)
+
   outputRequestList <- new_OutputRequestList()
   outputRequestList$addOutputRequest("AliveVolume", list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved, EPX = I(c("EPX"))))
+  outputRequestList$addOutputRequest("AliveBasalArea", list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved, EPX = I(c("EPX"))))
+  outputRequestList$addOutputRequest("AliveStemDensity", list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved, EPX = I(c("EPX"))))
   fmuList <- read.csv("./tests/Capsis/FMU02664.csv")
 
   for (i in 1:nrow(fmuList)) {
@@ -60,5 +64,13 @@ if (!file.exists(MMFileName)) {
 }
 
 metaModel$getSummary()
+
+startingValues <- new_StartingValues(c("b1","b2", "b3", "rho", "sigma2stratum"),
+                             c(100, 0.007, 2, 0.98, 500),
+                             rep("Uniform",5),
+                             c(list(c("0","300")), list(c("0.0001","0.02")), list(c("1","6")), list(c("0.8","0.995")), list(c("0","1500"))))
+metaModel$setStartingValuesForThisModelImplementation("ChapmanRichardsDerivativeWithRandomEffect", startingValues)
+
+metaModel$fitModel(metaModel$getSelectedOutputType(), TRUE, randomGridSize = 0)
 
 print(metaModel$plot(ymax = 350))
