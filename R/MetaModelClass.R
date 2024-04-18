@@ -266,7 +266,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 assign.env = me)
 
   delayedAssign("plotFit",
-                function(textsize = 20, plotPred = T, title = NULL, ymax = 250) {
+                function(textsize = 20, plotPred = T, title = NULL) {
                   dataset <- me$getFinalDataSet()
                   predictions <- NULL
 
@@ -295,18 +295,40 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                   }
 
                   plot <- ggplot2::ggplot()
-                  if (isVarianceAvailable)
-                  {
+                  if (isVarianceAvailable) {
                     plot <- plot +
                       ggplot2::geom_ribbon(ggplot2::aes(ymin=lower95, ymax=upper95, x=age, group=stratum), dataset, alpha = .1)
+                    maxY <- max(dataset$upper95)
+                  } else {
+                    maxY <- 0
+                  }
+                  maxY <- max(maxY, max(dataset$Estimate))
+
+                  if (plotPred) {
+                    plot <- plot + ggplot2::geom_ribbon(ggplot2::aes(ymin=predL95, ymax=predU95, x=age), datasetPred, alpha = .5) +
+                      ggplot2::geom_line(ggplot2::aes(y=pred, x=age), datasetPred, lty = "solid", size = 1.5)
+                    maxY <- max(maxY, max(dataset$predU95))
+                  }
+
+                  outputType <- me$getSelectedOutputType()
+                  if (grepl("BasalArea", outputType)) {
+                    yLabel <- bquote('Basal area'~(m^2~ha^{-1}))
+                  } else if (grepl("Volume", outputType)) {
+                    yLabel <- bquote('Volume'~(m^3~ha^{-1}))
+                  } else if (grepl("Biomass", outputType)) {
+                    yLabel <- bquote('Biomass'~(Mg~ha^{-1}))
+                  } else if (grepl("DominantHeight", outputType)) {
+                    yLabel <- bquote('Dominant height'~(m))
+                  } else if (grepl("StemDensity", outputType)) {
+                    yLabel <- bquote('Density'~(Trees~ha^{-1}))
                   }
 
                   plot <- plot +
                     ggplot2::geom_line(ggplot2::aes(y=Estimate, x=age, group=stratum), dataset, lty = "dashed") +
                     ggplot2::xlab("Age (yr)") +
-                    ggplot2::ylab(bquote('Volume'~(m^3~ha^{-1}))) +
-                    ggplot2::ylim(0,ymax) +
-                    ggplot2::xlim(0, 220) +
+                    ggplot2::ylab(yLabel) +
+                    ggplot2::ylim(0, maxY + 1) +
+                    ggplot2::xlim(0, max(dataset$age) + 1) +
                     ggplot2::theme_bw() +
                     ggplot2::theme(text = ggplot2::element_text(size=textsize),
                                    axis.text.x = ggplot2::element_text(size=textsize, color = "black"),

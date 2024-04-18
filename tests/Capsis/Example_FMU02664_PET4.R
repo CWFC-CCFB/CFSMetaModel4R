@@ -73,4 +73,5 @@ metaModel$setStartingValuesForThisModelImplementation("ChapmanRichardsDerivative
 
 metaModel$fitModel(metaModel$getSelectedOutputType(), TRUE, randomGridSize = 0)
 
-print(metaModel$plot(ymax = 350))
+print(metaModel$plotFit())
+metaModel$getSelectedOutputType()
