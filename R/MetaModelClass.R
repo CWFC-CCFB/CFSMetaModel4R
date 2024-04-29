@@ -38,7 +38,7 @@
 #' variables of an eventual meta-model. \cr
 #' Return a vector of character strings
 #'
-#' \item \bold{fitModel(outputType, enableMixedModelImplementations,
+#' \item \bold{fitModel(outputType, startingValuesMap,
 #' randomGridSize = 10000,
 #' nbBurnIn = 10000,
 #' nbAcceptedRealizations = 500000 + nbBurnIn,
@@ -47,7 +47,7 @@
 #' Arguments are \cr
 #' \itemize{
 #' \item outputType - The dependent variable of the meta-model
-#' \item enableMixedModelImplementations - A logical
+#' \item startingValuesMap - A StartingValuesMap instance
 #' \item randomGridSize - The number of random trial in order to find the
 #' starting values for the parameters (0 to disable the grid)
 #' \item nbBurnIn - The number of burn-in realizations
@@ -114,6 +114,15 @@
 #' the console. \cr
 #' Return nothing
 #'
+#' \item \bold{plotOutputType(outputType, textsize = 20)} \cr
+#' Plot a graph with the simulation results of a particular output type.
+#' Arguments are \cr
+#' \itemize{
+#' \item outputType - One of the output types (see getPossibleOutputTypes())
+#' \item textsize - The font size (by default 20)
+#' }
+#' Return nothing
+#'
 #' \item \bold{plotFit} \cr
 #' Provide a graph of the goodness of fit of the meta-model. \cr
 #' Return a ggplot2 graph
@@ -127,18 +136,9 @@
 #' Provide a histogram for each parameter estimate. \cr
 #' Return a list of ggplot2 graph
 #'
-#' \item \bold{convertScriptResultsIntoDataSet} \cr
-#' Provide the script results in a dataset. \cr
-#' Return a data.frame object
-#'
-#' \item \bold{setStartingValuesForThisModelImplementation} \cr
-#' Set the starting values of the parameters for a particular model implementation. \cr
-#' Arguments are \cr
-#' \itemize{
-#' \item modelImpl - A string that stands for the model implementation (e.g. ChapmanRichardsDerivativeWithRandomEffect)
-#' \item startingValues - A StartingValues instance
-#' }
-#' Return a data.frame object
+#' \item \bold{getImplementationList} \cr
+#' Provide the list of possible implementation for the metamodels. \cr
+#' Return a vector of characters
 #' }
 #'
 #' @export
@@ -175,7 +175,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 
   delayedAssign("fitModel",
                 function(outputType,
-                         enableMixedModelImplementations,
+                         startingValuesMap,
                          randomGridSize = 10000,
                          nbBurnIn = 10000,
                          nbAcceptedRealizations = 500000 + nbBurnIn,
@@ -206,8 +206,16 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                     simParms$oneEach <- as.integer(oneEach)
                   }
                   message(simParms$toString())
+                  linkedHashMapJava <- J4R::createJavaObject("java.util.LinkedHashMap")
+                  for (key in ls(startingValuesMap)) {
+                    o <- get(key, envir = startingValuesMap, inherits = F)
+                    if ("character" %in% class(o)) {
+                      linkedHashMapJava$put(key, o)
+                      message(paste("Adding implementation:", key))
+                    }
+                  }
                   message("Fitting candidate meta-models. This may take a while...")
-                  me$.metaModel$fitModel(outputType, as.logical(enableMixedModelImplementations))
+                  me$.metaModel$fitModel(outputType, linkedHashMapJava)
                   return(invisible(NULL))
                 },
                 assign.env = me)
@@ -262,6 +270,71 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
   delayedAssign("getModelComparison",
                 function() {
                   return(convertDataSet(me$.metaModel$getModelComparison()))
+                },
+                assign.env = me)
+
+  delayedAssign("plotOutputType",
+                function(outputType, textsize = 20) {
+                  if (!outputType %in% me$getPossibleOutputTypes()) {
+                    stop(paste("The output type should be one of the following:", paste(me$getPossibleOutputTypes(), collapse=", ") ))
+                  }
+                  dataset <- convertDataSet(me$.metaModel$convertScriptResultsIntoDataSet())
+
+                  dataset <- dataset[which(dataset$OutputType == outputType),]
+
+                  isVarianceAvailable <- "TotalVariance" %in% colnames(dataset)
+
+                  if (isVarianceAvailable)
+                  {
+                    dataset$lower95 <- dataset$Estimate - dataset$TotalVariance^.5 * qnorm(0.975)
+                    dataset[which(dataset$lower95 < 0), "lower95"] <- 0
+                    dataset$upper95 <- dataset$Estimate + dataset$TotalVariance^.5 * qnorm(0.975)
+                  }
+
+                  dataset$age <- dataset$StratumAgeYr + dataset$timeSinceInitialDateYr
+                  dataset$stratum <- paste(dataset$OutputType, dataset$StratumAgeYr, sep="_")
+
+                  plot <- ggplot2::ggplot()
+                  if (isVarianceAvailable) {
+                    plot <- plot +
+                      ggplot2::geom_ribbon(ggplot2::aes(ymin=lower95, ymax=upper95, x=age, group=stratum), dataset, alpha = .1)
+                    maxY <- max(dataset$upper95)
+                  } else {
+                    maxY <- 0
+                  }
+                  maxY <- max(maxY, max(dataset$Estimate))
+
+                  if (grepl("BasalArea", outputType)) {
+                    yLabel <- bquote('Basal area'~(m^2~ha^{-1}))
+                  } else if (grepl("Volume", outputType)) {
+                    yLabel <- bquote('Volume'~(m^3~ha^{-1}))
+                  } else if (grepl("Biomass", outputType)) {
+                    yLabel <- bquote('Biomass'~(Mg~ha^{-1}))
+                  } else if (grepl("DominantHeight", outputType)) {
+                    yLabel <- bquote('Dominant height'~(m))
+                  } else if (grepl("StemDensity", outputType)) {
+                    yLabel <- bquote('Density'~(Trees~ha^{-1}))
+                  } else {
+                    stop(paste("The output type", outputType, "is not supported!"))
+                  }
+
+                  plot <- plot +
+                    ggplot2::geom_line(ggplot2::aes(y=Estimate, x=age, group=stratum), dataset, lty = "dashed") +
+                    ggplot2::xlab("Age (yr)") +
+                    ggplot2::ylab(yLabel) +
+                    ggplot2::ylim(0, maxY + 1) +
+                    ggplot2::xlim(0, max(dataset$age) + 1) +
+                    ggplot2::theme_bw() +
+                    ggplot2::theme(text = ggplot2::element_text(size=textsize),
+                                   axis.text.x = ggplot2::element_text(size=textsize, color = "black"),
+                                   axis.text.y = ggplot2::element_text(size=textsize, color = "black"),
+                                   axis.line = ggplot2::element_line(color = "black"),
+                                   panel.grid.major = ggplot2::element_blank(),
+                                   panel.grid.minor = ggplot2::element_blank(),
+                                   panel.background = ggplot2::element_blank(),
+                                   axis.ticks.length = ggplot2::unit(3,"mm"),
+                                   panel.border = ggplot2::element_blank())
+                  return(plot)
                 },
                 assign.env = me)
 
@@ -378,34 +451,12 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 },
                 assign.env = me)
 
-  delayedAssign("convertScriptResultsIntoDataSet",
-                function(initialAge, scriptResult) {
-                  datasetObject <- me$.metaModel$convertScriptResultsIntoDataSet()
-                  return(convertDataSet(datasetObject))
-                },
-                assign.env = me)
-
-  delayedAssign("getParameterFieldNames",
+  delayedAssign("getImplementationList",
                 function() {
-                  inputParameterMapKeys <- J4R::getAllValuesFromArray(J4R::callJavaMethod("repicea.simulation.metamodel.ParametersMapUtilities$InputParametersMapKey", "values"))
-                  return(inputParameterMapKeys$name())
+                  list <- J4R::getAllValuesFromArray(J4R::callJavaMethod("repicea.simulation.metamodel.MetaModel$ModelImplEnum", "values"))
+                  return(list$name())
                 },
                 assign.env = me)
-
-  delayedAssign("setStartingValuesForThisModelImplementation",
-                function(modelImpl, startingValues) {
-                  if (!("StartingValues" %in% class(startingValues))) {
-                    stop("The startingValues parameter should be an instance of the StartingValues class.")
-                  }
-                  modelImplEnum <- J4R::createJavaObject("repicea.simulation.metamodel.MetaModel$ModelImplEnum", modelImpl)
-                  jsonStr <- startingValues$toJSONString()
-                  message(paste("Setting parameters of", modelImplEnum$name()))
-                  message(jsonStr)
-                  me$.metaModel$setStartingValuesForThisModelImplementation(modelImplEnum, jsonStr)
-                  return(invisible(NULL))
-                },
-                assign.env = me)
-
   return(me)
 }
 
@@ -459,7 +510,6 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 #' @export
 new_StartingValues <- function(Parameter, StartingValue, Distribution, DistParms) {
   me <- new.env(parent = emptyenv())
-  class(me) <- c("MetaModel")
   me$.startingValues <- data.frame(Parameter = Parameter, StartingValue = StartingValue, Distribution = Distribution)
   me$.startingValues$DistParms <- DistParms
   class(me) <- c("StartingValues")
@@ -472,3 +522,43 @@ new_StartingValues <- function(Parameter, StartingValue, Distribution, DistParms
                 assign.env = me)
   return(me)
 }
+
+
+#'
+#' Constructor for the StartingValuesMap class.
+#'
+#' @description The parameter starting values for a set of model implementations.
+#'
+#' @return an S3 StartingValuesMap instance
+#'
+#' @details
+#'
+#' The class contains the following methods: \cr
+#' \itemize{
+#'
+#' \item \bold{add(implementationName, startingValues)} \cr
+#' Add the starting values for a particular implementation. \cr
+#' Arguments are \cr
+#' \itemize{
+#' \item implementationName - The implementation name (see metaModel$getImplementationList)
+#' \item startingValues - A StartingValues instance
+#' }
+#' Return nothing
+#' }
+#'
+#' @export
+new_StartingValuesMap <- function() {
+  me <- new.env(parent = emptyenv())
+  class(me) <- c("StartingValuesMap")
+  delayedAssign("add",
+                function(implementationName, startingValues) {
+                  if (class(implementationName) != "character" | !"StartingValues" %in% class(startingValues)) {
+                    stop("The implementationName argument must be a character string and the startingValues must be an instance of the StartingValues S3 class!")
+                  }
+                  assign(implementationName, startingValues$toJSONString(), envir = me, inherits = FALSE)
+                  return(invisible(NULL))
+                },
+                assign.env = me)
+  return(me)
+}
+

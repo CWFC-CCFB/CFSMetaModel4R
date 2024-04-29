@@ -47,7 +47,6 @@ if (!file.exists(MMFileName)) {
     csvFilename <- paste("./tests/Capsis/", row$Filename, sep="")
     fmuData <- read.csv(csvFilename)
     message(paste("Simulating age", age))
-#    str(fmuData)
     colnames(fmuData) <- c("ManagStr", "PLOT", "LATITUDE", "LONGITUDE", "ALTITUDE", "ECOREGION", "TYPEECO", "SLOPE_CLASS",
                            "DRAINAGE_CLASS", "NO_ARBRE", "SPECIES", "TREESTATUS", "TREEDHPCM", "TREEHEIGHT", "TREEFREQ", "ANNEE_SOND")
     initYear <- fmuData[i,"ANNEE_SOND"]
@@ -56,6 +55,7 @@ if (!file.exists(MMFileName)) {
   }
 
   possibleOutputTypes <- metaModel$getPossibleOutputTypes()
+  #### TODO FIX THIS ####
   metaModel$fitModel(possibleOutputTypes[3], TRUE)
 
   metaModel$save(MMFileName)
@@ -64,14 +64,25 @@ if (!file.exists(MMFileName)) {
 }
 
 metaModel$getSummary()
+metaModel$getSelectedOutputType()
 
-startingValues <- new_StartingValues(c("b1","b2", "b3", "rho", "sigma2stratum"),
-                             c(100, 0.007, 2, 0.98, 500),
-                             rep("Uniform",5),
-                             c(list(c("0","300")), list(c("0.0001","0.02")), list(c("1","6")), list(c("0.8","0.995")), list(c("0","1500"))))
-metaModel$setStartingValuesForThisModelImplementation("ChapmanRichardsDerivativeWithRandomEffect", startingValues)
+metaModel$getPossibleOutputTypes()
+metaModel$plotOutputType("AliveStemDensity_Coniferous")
+metaModel$getImplementationList()
 
-metaModel$fitModel(metaModel$getSelectedOutputType(), TRUE, randomGridSize = 0)
+map <- new_StartingValuesMap()
+map$add("Exponential", new_StartingValues(c("b1","b2", "rho"),
+                                          c(3000, 0.005, 0.95),
+                                          rep("Uniform",3),
+                                          c(list(c("0","8000")), list(c("0.00001","0.05")), list(c("0.8","0.995")))))
+map$add("ExponentialWithRandomEffect", new_StartingValues(c("b1","b2", "rho", "sigma_u"),
+                             c(3000, 0.005, 0.95, 1000),
+                             rep("Uniform",4),
+                             c(list(c("0","8000")), list(c("0.00001","0.05")), list(c("0.8","0.995")), list(c("0","3000")))))
+
+metaModel$fitModel("AliveStemDensity_Coniferous", map)
+metaModel$getModelComparison()
 
 print(metaModel$plotFit())
 metaModel$getSelectedOutputType()
+metaModel$getStratumGroup()
