@@ -18,7 +18,7 @@ MMFileName <- paste(getwd(), "tests", "OSM", "FittedMetamodel_Coniferous_AllAliv
 
 if (!file.exists(MMFileName))
 {
-  osm <- new_OSMClass("https://localhost:7032")
+  osm <- new_OSMClass()
 
   variantList <- osm$VariantList()
   variant <- variantList[[1]]

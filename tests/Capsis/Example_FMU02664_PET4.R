@@ -6,7 +6,7 @@
 rm(list=ls())
 library(CFSMetaModel4R)
 
-capsis <- new_CapsisClass("http://repicea.dynu.net")
+capsis <- new_CapsisClass()
 
 capsis$CapsisStatus()
 variantList <- capsis$VariantList()
