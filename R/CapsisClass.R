@@ -27,7 +27,7 @@
 #' }
 #'
 #' @export
-new_CapsisClass <- function(host = "http://repicea.dynu.net") {
+new_CapsisClass <- function(host = "https://repicea.dynu.net") {
   me <- new.env(parent = emptyenv())
   class(me) <- c("CapsisClass")
   me$host <- host
@@ -57,6 +57,25 @@ new_CapsisClass <- function(host = "http://repicea.dynu.net") {
                   url <- paste(me$host, me$endpoint, "CapsisStatus", sep="/")
 
                   r <- GET( url, query = list());
+
+                  if (r$status_code != 200)
+                  {
+                    stop(content(r, "text"))
+                  }
+
+                  result <- content(r, "text")
+
+                  resultJSON <- fromJSON(result)
+
+                  return (resultJSON)
+                },
+                assign.env = me)
+
+  delayedAssign("VariantScope",
+                function(variant) {
+                  url <- paste(me$host, me$endpoint, "VariantScope", sep="/")
+
+                  r <- GET( url, query = list(variant = variant));
 
                   if (r$status_code != 200)
                   {
@@ -164,7 +183,7 @@ new_CapsisClass <- function(host = "http://repicea.dynu.net") {
 
                   taskId <- fromJSON(result)
 
-                  status <- capsis$TaskStatus(taskId)
+                  status <- me$TaskStatus(taskId)
                   firstTime <- T
                   while (status$code == "IN_PROGRESS")
                   {
@@ -176,7 +195,7 @@ new_CapsisClass <- function(host = "http://repicea.dynu.net") {
                     }
                     message(messageStr, appendLF = F)
                     Sys.sleep(2)
-                    status <- capsis$TaskStatus(taskId)
+                    status <- me$TaskStatus(taskId)
                   }
 
                   message(paste(status$code))

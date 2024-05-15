@@ -6,11 +6,12 @@
 rm(list=ls())
 library(CFSMetaModel4R)
 
-capsis <- new_CapsisClass("http://repicea.dynu.net")
+capsis <- new_CapsisClass()
 
 capsis$CapsisStatus()
 variantList <- capsis$VariantList()
 variant <- variantList[1]
+capsis$VariantScope(variant)
 
 fieldsList <- capsis$VariantFields(variant)
 
