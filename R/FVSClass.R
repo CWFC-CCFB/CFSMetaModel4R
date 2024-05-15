@@ -46,7 +46,7 @@
 #' }
 #'
 #' @export
-new_FVSClass <- function(host) {
+new_FVSClass <- function(host = "https://repicea.dynu.net") {
   me <- new.env(parent = emptyenv())
   class(me) <- c("FVSClass")
   me$host <- host

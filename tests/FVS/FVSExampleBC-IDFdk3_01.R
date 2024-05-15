@@ -17,7 +17,7 @@ metaModel <- new_MetaModel("IDFdk3/01", "geoDomain", "dataSource")
 treeData <- read.csv("./tests/FVS/BC-treeFile.csv")
 plotData <- read.csv("./tests/FVS/BC-standInfo.csv")
 
-fvs <- new_FVSClass("https://localhost:7135")
+fvs <- new_FVSClass()
 
 variantList <- fvs$VariantList()
 variant <- variantList[[1]]
