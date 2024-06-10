@@ -57,36 +57,32 @@
 #' }
 #' Provide the parameter estimates in the console
 #'
-#' \item \bold{getPredictions(ageYr, timeSinceInitialDateYr, varianceOutputType)} \cr
+#' \item \bold{getPredictions(ageYr, varianceOutputType, timeSinceInitialDateYr)} \cr
 #' Provide predictions of the meta-model. \cr
 #' Arguments are \cr
 #' \itemize{
 #' \item ageYr - a vector of positive integers
-#' \item timeSinceInitialDateYr - Any value (is useless at the moment)
 #' \item varianceOutputType - a string either NONE, PARAMEST (error on the mean),
 #' PARAMESTRE (error on the mean + random effect)
+#' \item timeSinceInitialDateYr - Any value (is useless at the moment, 0 by default)
 #' }
 #' Return a data.frame object
 #'
-#' \item \bold{getMonteCarloPredictions(ageYr, timeSinceInitialDateYr, nbSubjects,
-#' nbRealizations)} \cr
+#' \item \bold{getMonteCarloPredictions(ageYr, nbSubjects, nbRealizations,
+#' timeSinceInitialDateYr)} \cr
 #' Provide stochastic predictions of the meta-model. \cr
 #' Arguments are \cr
 #' \itemize{
 #' \item ageYr - a vector of positive integers
-#' \item timeSinceInitialDateYr - Any value (is useless at the moment)
 #' \item nbSubjects - the number of subject (typically strata)
 #' \item nbRealizations - the number of realizations
+#' \item timeSinceInitialDateYr - Any value (is useless at the moment, 0 by default)
 #' }
 #' Return a data.frame object
 #'
 #' \item \bold{getSelectedOutputType()} \cr
 #' Provide the output type of this meta-model. \cr
 #' Return a character string
-#'
-#' \item \bold{getFinalDataSet()} \cr
-#' Provide the individual stratum simulation and the meta-model predictions.
-#' Return a data.frame object
 #'
 #' \item \bold{load(filename)} \cr
 #' Load a meta-model from file. \cr
@@ -139,6 +135,10 @@
 #' \item \bold{getImplementationList} \cr
 #' Provide the list of possible implementation for the metamodels. \cr
 #' Return a vector of characters
+#'
+#' \item \bold{getRegenerationLagYrIfAny} \cr
+#' Provide the regeneration lag if there is one. \cr
+#' Return the lag (yrs)
 #' }
 #'
 #' @export
@@ -221,7 +221,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 assign.env = me)
 
   delayedAssign("getPredictions",
-                function(ageYr, timeSinceInitialDateYr, varianceOutputType) {
+                function(ageYr, varianceOutputType = "NONE", timeSinceInitialDateYr = 0) {
                   ageYrArray <- J4R::as.JavaArray(as.integer(ageYr))
                   varianceOutputEnum <- J4R::createJavaObject("repicea.simulation.metamodel.MetaModel$PredictionVarianceOutputType", varianceOutputType)
                   dataSetInstance <- me$.metaModel$getPredictions(ageYrArray, as.integer(timeSinceInitialDateYr), varianceOutputEnum)
@@ -230,7 +230,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 assign.env = me)
 
   delayedAssign("getMonteCarloPredictions",
-                function(ageYr, timeSinceInitialDateYr, nbSubjects, nbRealizations) {
+                function(ageYr, nbSubjects, nbRealizations, timeSinceInitialDateYr = 0) {
                   ageYrArray <- J4R::as.JavaArray(as.integer(ageYr))
                   dataSetInstance <- me$.metaModel$getMonteCarloPredictions(ageYrArray, as.integer(timeSinceInitialDateYr), as.integer(nbSubjects), as.integer(nbRealizations))
                   return(convertDataSet(dataSetInstance))
@@ -240,12 +240,6 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
   delayedAssign("getSelectedOutputType",
                 function() {
                   return(me$.metaModel$getSelectedOutputType())
-                },
-                assign.env = me)
-
-  delayedAssign("getFinalDataSet",
-                function() {
-                  return(convertDataSet(me$.metaModel$getFinalDataSet()))
                 },
                 assign.env = me)
 
@@ -278,24 +272,11 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                   if (!outputType %in% me$getPossibleOutputTypes()) {
                     stop(paste("The output type should be one of the following:", paste(me$getPossibleOutputTypes(), collapse=", ") ))
                   }
-                  dataset <- convertDataSet(me$.metaModel$convertScriptResultsIntoDataSet())
 
-                  dataset <- dataset[which(dataset$OutputType == outputType),]
-
-                  isVarianceAvailable <- "TotalVariance" %in% colnames(dataset)
-
-                  if (isVarianceAvailable)
-                  {
-                    dataset$lower95 <- dataset$Estimate - dataset$TotalVariance^.5 * qnorm(0.975)
-                    dataset[which(dataset$lower95 < 0), "lower95"] <- 0
-                    dataset$upper95 <- dataset$Estimate + dataset$TotalVariance^.5 * qnorm(0.975)
-                  }
-
-                  dataset$age <- dataset$StratumAgeYr + dataset$timeSinceInitialDateYr
-                  dataset$stratum <- paste(dataset$OutputType, dataset$StratumAgeYr, sep="_")
+                  dataset <- .formatObservationDataSet(me, outputType)
 
                   plot <- ggplot2::ggplot()
-                  if (isVarianceAvailable) {
+                  if ("lower95" %in% colnames(dataset) & "upper95" %in% colnames(dataset)) {
                     plot <- plot +
                       ggplot2::geom_ribbon(ggplot2::aes(ymin=lower95, ymax=upper95, x=age, group=stratum), dataset, alpha = .1)
                     maxY <- max(dataset$upper95)
@@ -339,36 +320,18 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 assign.env = me)
 
   delayedAssign("plotFit",
-                function(textsize = 20, plotPred = T, title = NULL) {
-                  dataset <- me$getFinalDataSet()
-                  predictions <- NULL
+                function(textsize = 20, title = NULL) {
+                  dataset <- .formatObservationDataSet(me, me$getSelectedOutputType())
+                  maxX <- max(dataset$age)
 
-                  isVarianceAvailable <- "TotalVariance" %in% colnames(dataset)
+                  predictions <- me$getPredictions(1:maxX, "PARAMEST")
 
-                  if (isVarianceAvailable)
-                  {
-                    dataset$lower95 <- dataset$Estimate - dataset$TotalVariance^.5 * qnorm(0.975)
-                    dataset[which(dataset$lower95 < 0), "lower95"] <- 0
-                    dataset$upper95 <- dataset$Estimate + dataset$TotalVariance^.5 * qnorm(0.975)
-                  }
-
-                  dataset$age <- dataset$initialAgeYr + dataset$timeSinceInitialDateYr
-                  dataset$stratum <- paste(dataset$OutputType,dataset$initialAgeYr,sep="_")
-                  dataset$predL95 <- dataset$pred - dataset$predVar^.5 * qnorm(0.975)
-                  dataset$predU95 <- dataset$pred + dataset$predVar^.5 * qnorm(0.975)
-                  dataset[which(dataset$predL95 < 0), "predL95"] <- 0
-
-                  datasetPred <- NULL
-                  uniqueAge <- c()
-                  for (i in 1:length(dataset[,1])) {
-                    if (!dataset[i,"age"] %in% uniqueAge) {
-                      datasetPred <- rbind(datasetPred, dataset[i,])
-                      uniqueAge <- c(uniqueAge, dataset[i,"age"])
-                    }
-                  }
+                  predictions$predL95 <- predictions$Pred - predictions$Variance^.5 * qnorm(0.975)
+                  predictions$predU95 <- predictions$Pred + predictions$Variance^.5 * qnorm(0.975)
+                  predictions[which(predictions$predL95 < 0), "predL95"] <- 0
 
                   plot <- ggplot2::ggplot()
-                  if (isVarianceAvailable) {
+                  if ("lower95" %in% colnames(dataset) & "upper95" %in% colnames(dataset)) {
                     plot <- plot +
                       ggplot2::geom_ribbon(ggplot2::aes(ymin=lower95, ymax=upper95, x=age, group=stratum), dataset, alpha = .1)
                     maxY <- max(dataset$upper95)
@@ -376,12 +339,9 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                     maxY <- 0
                   }
                   maxY <- max(maxY, max(dataset$Estimate))
+                  maxY <- max(maxY, max(predictions$predU95))
 
-                  if (plotPred) {
-                    plot <- plot + ggplot2::geom_ribbon(ggplot2::aes(ymin=predL95, ymax=predU95, x=age), datasetPred, alpha = .5) +
-                      ggplot2::geom_line(ggplot2::aes(y=pred, x=age), datasetPred, lty = "solid", size = 1.5)
-                    maxY <- max(maxY, max(dataset$predU95))
-                  }
+                  plot <- plot + ggplot2::geom_ribbon(ggplot2::aes(ymin=predL95, ymax=predU95, x=AgeYr), predictions, alpha = .5)
 
                   outputType <- me$getSelectedOutputType()
                   if (grepl("BasalArea", outputType)) {
@@ -398,6 +358,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 
                   plot <- plot +
                     ggplot2::geom_line(ggplot2::aes(y=Estimate, x=age, group=stratum), dataset, lty = "dashed") +
+                    ggplot2::geom_line(ggplot2::aes(y=Pred, x=AgeYr), predictions, lty = "solid", size = 1.5) +
                     ggplot2::xlab("Age (yr)") +
                     ggplot2::ylab(yLabel) +
                     ggplot2::ylim(0, maxY + 1) +
@@ -414,10 +375,6 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                                    panel.border = ggplot2::element_blank())
                   if (!is.null(title)) {
                     plot <- plot + ggplot2::ggtitle(title)
-                  }
-                  if (plotPred) {
-                    plot <- plot + ggplot2::geom_ribbon(ggplot2::aes(ymin=predL95, ymax=predU95, x=age), datasetPred, alpha = .5) +
-                      ggplot2::geom_line(ggplot2::aes(y=pred, x=age), datasetPred, lty = "solid", size = 1.5)
                   }
                   return(plot)
                 },
@@ -455,6 +412,12 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 function() {
                   list <- J4R::getAllValuesFromArray(J4R::callJavaMethod("repicea.simulation.metamodel.MetaModel$ModelImplEnum", "values"))
                   return(list$name())
+                },
+                assign.env = me)
+
+  delayedAssign("getRegenerationLagYrIfAny",
+                function() {
+                  return(me$.metaModel$getRegenerationLagYrIfAny())
                 },
                 assign.env = me)
   return(me)
@@ -560,5 +523,24 @@ new_StartingValuesMap <- function() {
                 },
                 assign.env = me)
   return(me)
+}
+
+.formatObservationDataSet <- function(metaModelInstance, outputType) {
+  dataset <- convertDataSet(metaModelInstance$.metaModel$convertScriptResultsIntoDataSet())
+
+  dataset <- dataset[which(dataset$OutputType == outputType),]
+
+  isVarianceAvailable <- "TotalVariance" %in% colnames(dataset)
+
+  if (isVarianceAvailable)
+  {
+    dataset$lower95 <- dataset$Estimate - dataset$TotalVariance^.5 * qnorm(0.975)
+    dataset[which(dataset$lower95 < 0), "lower95"] <- 0
+    dataset$upper95 <- dataset$Estimate + dataset$TotalVariance^.5 * qnorm(0.975)
+  }
+
+  dataset$age <- dataset$StratumAgeYr + dataset$timeSinceInitialDateYr
+  dataset$stratum <- paste(dataset$OutputType, dataset$StratumAgeYr, sep="_")
+  return(dataset)
 }
 
