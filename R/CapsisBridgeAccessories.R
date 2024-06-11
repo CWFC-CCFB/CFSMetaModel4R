@@ -22,7 +22,7 @@
 #'
 #' Convert dataset to an R equivalent
 #'
-#' @param dataSet the dataSetObject java object to convert
+#' @param dataSetObject the dataSetObject java object to convert
 #' @return an R equivalent of the dataset
 #'
 #' @export

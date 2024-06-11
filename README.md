@@ -1,4 +1,7 @@
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0) [![R-CMD-check](https://github.com/CWFC-CCFB/CFSMetaModel4R/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/CWFC-CCFB/CFSMetaModel4R/actions/workflows/R-CMD-check.yaml)
+
 ## CFSMetaModel4R 
+
 An R package allowing the fitting of meta-models from existing tree-level models
 
 It allows running tree-level simulations on 

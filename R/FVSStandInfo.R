@@ -39,7 +39,7 @@ new_FVStandInfoDict <- function() {
 
   delayedAssign("toJSONString",
                 function() {
-                  return (toJSON(me$SIList, auto_unbox=TRUE))
+                  return (jsonlite::toJSON(me$SIList, auto_unbox=TRUE))
                 },
                 assign.env = me)
 

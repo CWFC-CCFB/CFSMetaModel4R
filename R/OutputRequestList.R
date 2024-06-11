@@ -43,7 +43,7 @@ new_OutputRequestList <- function() {
 
   delayedAssign("toJSONString",
                 function() {
-                  return (toJSON(me$orList, auto_unbox=TRUE))
+                  return (jsonlite::toJSON(me$orList, auto_unbox=TRUE))
                 },
                 assign.env = me)
 

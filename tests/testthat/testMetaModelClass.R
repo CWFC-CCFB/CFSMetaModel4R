@@ -1,7 +1,5 @@
 #'
-#' Happy path test up to addScriptResult
-#'
-#' IMPORTANT FVS Web API must be online
+#' Happy path test for MetaModelClass
 #'
 
 rm(list=ls())
@@ -9,39 +7,28 @@ rm(list=ls())
 library(CFSMetaModel4R)
 
 metaModel <- new_MetaModel("","","")
-metaModel$load("./tests/testthat/QC_3EST_RS38_NoChange_AliveVolume_AllSpecies.zml")
+#metaModel$load("./tests/testthat/QC_3EST_RS38_NoChange_AliveVolume_AllSpecies.zml")
+metaModel$load("QC_3EST_RS38_NoChange_AliveVolume_AllSpecies.zml")
 
-metaModel$plotOutputType("AliveVolume_AllSpecies")
-metaModel$plotFit(title = "AliveVolume_AllSpecies")
+p <- metaModel$plotOutputType("AliveVolume_AllSpecies")
+test_that("Produced the plot of output type", {
+  expect_equal(inherits(p, "ggplot"), TRUE)
+})
 
-metaModel$getPredictions(1:150,"PARAMEST")
+p <- metaModel$plotFit(title = "AliveVolume_AllSpecies")
+test_that("Produced the plot of fit", {
+  expect_equal(inherits(p, "ggplot"), TRUE)
+})
 
-speciesConiferous <- fvs$VariantSpecies(variant, TRUE, "Coniferous")
-speciesBroadleaved <- fvs$VariantSpecies(variant, TRUE, "Broadleaved")
+pred <- metaModel$getPredictions(1:150,"PARAMEST")
+test_that("Predictions", {
+  expect_equal(nrow(pred), 150)
+  expect_equal(pred[100,"Pred"], 141.69395080, tolerance = 1E-6)
+})
 
-#variantFields <- fvs$VariantFields(variant)
-
-outputRequestTypes <- fvs$OutputRequestTypes()
-
-outputRequestList <- new_OSMOutputRequestList()
-
-outputRequestList$addOutputRequest(outputRequestTypes$statusClass[[1]], outputRequestTypes$variable[[1]], list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved))
-
-standinfoDict <- new_FVStandInfoDict()
-standinfoDict$addStandInfo("0101","KAM-IDFxh2/01", 21, 0, 0, 1150)
-
-df <- fvs$Simulate(FVSTreeListTwoTreesOnePlot, outputRequestList, variant, standinfoDict, 10, 2, 1990)
-
-scriptResult <- fvs$PrepareScriptResult(df)
-
-metaModel <- new_MetaModel("stratumGroupID", "geoDomain", "dataSource")
-
-metaModel$addScriptResult(as.integer(30), scriptResult)
-dataSet <- scriptResult$getDataSet()
-
-test_that("Number of observations in the dataset", {
-  expect_equal(dataSet$getNumberOfObservations(), 14)
-  expect_equal(dataSet$getValueAt(as.integer(13),"Estimate"), 205.840832765212, tolerance=1E-8)
+lag <- metaModel$getRegenerationLagYrIfAny()
+test_that("Regeneration lag", {
+  expect_equal(lag, 8.868763446, tolerance = 1E-6)
 })
 
 J4R::shutdownClient()

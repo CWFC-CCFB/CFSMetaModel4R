@@ -17,6 +17,7 @@
 #'
 #' @description This class is the interface to the OSM http server.
 #'
+#' @param host the url of CAPSIS Web API (http://repicea.dynu.net by default)
 #' @return an S3 OSMClass instance
 #'
 #'  TODO update documentation here
@@ -64,16 +65,16 @@ new_OSMClass <- function(host = "https://repicea.dynu.net") {
                 function() {
                   url <- paste(me$host, me$endpoint, "VariantList", sep="/")
 
-                  r <- GET( url, query = list());
+                  r <- httr::GET( url, query = list());
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   return (resultJSON)
                 },
@@ -83,16 +84,16 @@ new_OSMClass <- function(host = "https://repicea.dynu.net") {
                 function(variant, outputAsVector, speciesType) {
                   url <- paste(me$host, me$endpoint, "VariantSpecies", sep="/")
 
-                  r <- GET( url, query = list(variant = variant, type = speciesType));
+                  r <- httr::GET( url, query = list(variant = variant, type = speciesType));
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   if (outputAsVector)
                   {
@@ -115,16 +116,16 @@ new_OSMClass <- function(host = "https://repicea.dynu.net") {
                 function() {
                   url <- paste(me$host, me$endpoint, "OutputRequestTypes", sep="/")
 
-                  r <- GET( url, query = list());
+                  r <- httr::GET( url, query = list());
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   return (resultJSON)
                 },
@@ -135,16 +136,16 @@ new_OSMClass <- function(host = "https://repicea.dynu.net") {
                 function(variant) {
                   url <- paste(me$host, me$endpoint, "VariantFields", sep="/")
 
-                  r <- GET( url, query = list(variant = variant));
+                  r <- httr::GET( url, query = list(variant = variant));
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   return (resultJSON)
                 },
@@ -155,16 +156,16 @@ new_OSMClass <- function(host = "https://repicea.dynu.net") {
                   outputRequestListJSON <- outputRequestList$toJSONString()
                   csvData <- me$ConvertDataFrameToCSVString(data)
                   url <- paste(me$host, me$endpoint, "Simulate", sep="/")
-                  r <- POST( url, query = list(years = as.character(years), variant = variant, ypc = as.character(ypc)), body = list(data=csvData, output=outputRequestListJSON), encode = "multipart" );
+                  r <- httr::POST( url, query = list(years = as.character(years), variant = variant, ypc = as.character(ypc)), body = list(data=csvData, output=outputRequestListJSON), encode = "multipart" );
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   osmResult <- new_SimulationResult(resultJSON)
 

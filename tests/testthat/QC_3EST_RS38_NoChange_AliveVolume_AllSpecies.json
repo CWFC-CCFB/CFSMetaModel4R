@@ -278,7 +278,7 @@
     "this$0":{"@ref":1}
   },
   "fit":{
-    "timeStamp":"2024-06-07T09:19:42-0400",
+    "timeStamp":"2024-06-10T19:05:33-0400",
     "outputType":"AliveVolume_AllSpecies",
     "fitModel":"ChapmanRichardsDerivative",
     "stratumGroup":"STR_RS38_3EST",

@@ -1,17 +1,23 @@
 Package: CFSMetaModel4R
 Type: Package
 Title: Allow to Fit Meta-Models From Existing Tree-Level Models
-Version: 1.5.0
+Version: 1.5.1
 Author: Jean-François Lavoie and Mathieu Fortin, Canadian Wood Fibre Centre, Canadian Forest Service
 Maintainer: Mathieu Fortin <mathieu.fortin.re@gmail.com>
 Copyright: His Majesty the King in right of Canada
-Description: To be completed
+Description: A package to run simulations from tree- or plot-level models and fit meta-models.
 URL: https://github.com/CWFC-CCFB/CFSMetaModel4R
 Imports:
   ggplot2 (>= 3.3),
-  J4R (>= 1.2.2)
+  J4R (>= 1.2.2),
+  CFSMetaModelCommons4R (>= 1.0.0),
+  httr (>= 1.4.7),
+  jsonlite (>= 1.8.8),
+  stats (>= 4.3.2),
+  utils (>= 4.3.2)
 Remotes:
-    CWFC-CCFB/J4R  
+    CWFC-CCFB/J4R,
+    CWFC-CCFB/CFSMetaModelCommons4R
 License: LGPL-3 + file LICENSE
 BugReports: https://github.com/CWFC-CCFB/CFSMetaModel4R/issues
 Encoding: UTF-8
@@ -19,7 +25,4 @@ LazyData: true
 RoxygenNote: 7.3.0
 Suggests: 
     testthat (>= 3.0.0)
-Depends:
-  httr,
-  jsonlite
 Config/testthat/edition: 3

@@ -13,8 +13,7 @@
 #' simulation results need to be aggregated.
 #'
 #' @export
-new_SimulationResult <- function(resultJSON)
-{
+new_SimulationResult <- function(resultJSON) {
   me <- new.env(parent = emptyenv())
   class(me) <- c("SimulationResult")
 
@@ -22,7 +21,7 @@ new_SimulationResult <- function(resultJSON)
   if (!is.null(resultJSON[["csvReport"]]))
   {# OSM output
     me$mustAggregate <- TRUE
-    me$dataSet <- read.csv(text = resultJSON$csvReport)
+    me$dataSet <- utils::read.csv(text = resultJSON$csvReport)
 
     me$nbRealizations <- resultJSON$nbRealizations
     me$nbPlots <- resultJSON$nbPlots
@@ -61,7 +60,7 @@ new_SimulationResult <- function(resultJSON)
   #aggregate results if needed
   if (me$mustAggregate)
   {
-    me$dataSet <- aggregate(Estimate~DateYr+timeSinceInitialDateYear+OutputType, me$dataSet, FUN="mean")
+    me$dataSet <- stats::aggregate(Estimate~DateYr+timeSinceInitialDateYear+OutputType, me$dataSet, FUN="mean")
   }
 
   return (me)

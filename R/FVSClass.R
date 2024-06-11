@@ -17,7 +17,7 @@
 #' Constructor for the FVSClass class.
 #'
 #' @description This class is the interface to the OSM http server.
-#'
+#' @param host the url of FVS Web API (http://repicea.dynu.net by default)
 #' @return an S3 FVSClass instance
 #'
 #'  TODO update documentation here
@@ -65,16 +65,16 @@ new_FVSClass <- function(host = "https://repicea.dynu.net") {
                 function() {
                   url <- paste(me$host, me$endpoint, "VariantList", sep="/")
 
-                  r <- GET( url, query = list());
+                  r <- httr::GET( url, query = list());
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   return (resultJSON)
                 },
@@ -84,16 +84,16 @@ new_FVSClass <- function(host = "https://repicea.dynu.net") {
                 function(variant, outputAsVector, speciesType) {
                   url <- paste(me$host, me$endpoint, "VariantSpecies", sep="/")
 
-                  r <- GET( url, query = list(variant = variant, type = speciesType));
+                  r <- httr::GET( url, query = list(variant = variant, type = speciesType));
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   if (outputAsVector)
                   {
@@ -116,16 +116,16 @@ new_FVSClass <- function(host = "https://repicea.dynu.net") {
                 function() {
                   url <- paste(me$host, me$endpoint, "OutputRequestTypes", sep="/")
 
-                  r <- GET( url, query = list());
+                  r <- httr::GET( url, query = list());
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   return (resultJSON)
                 },
@@ -136,16 +136,16 @@ new_FVSClass <- function(host = "https://repicea.dynu.net") {
                 function(variant) {
                   url <- paste(me$host, me$endpoint, "VariantFields", sep="/")
 
-                  r <- GET( url, query = list(variant = variant));
+                  r <- httr::GET( url, query = list(variant = variant));
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   return (resultJSON)
                 },
@@ -157,16 +157,16 @@ new_FVSClass <- function(host = "https://repicea.dynu.net") {
                   standInfoDictJSON <- standInfoDict$toJSONString()
                   csvData <- me$ConvertDataFrameToCSVString(data)
                   url <- paste(me$host, me$endpoint, "Simulate", sep="/")
-                  r <- POST( url, query = list(years = as.character(years), variant = variant, ypc = as.character(ypc), initialYear = as.character(initialYear)), body = list(data=csvData, output=outputRequestListJSON, standInfoDict=standInfoDictJSON), encode = "multipart" );
+                  r <- httr::POST( url, query = list(years = as.character(years), variant = variant, ypc = as.character(ypc), initialYear = as.character(initialYear)), body = list(data=csvData, output=outputRequestListJSON, standInfoDict=standInfoDictJSON), encode = "multipart" );
 
                   if (r$status_code != 200)
                   {
-                    stop(content(r, "text"))
+                    stop(httr::content(r, "text"))
                   }
 
-                  result <- content(r, "text")
+                  result <- httr::content(r, "text")
 
-                  resultJSON <- fromJSON(result)
+                  resultJSON <- jsonlite::fromJSON(result)
 
                   osmResult <- new_SimulationResult(resultJSON)
 
@@ -198,41 +198,3 @@ new_FVSClass <- function(host = "https://repicea.dynu.net") {
   return(me)
 }
 
-#'
-#' Constructor for the OSMResult class.
-#'
-#' @description This class extracts data received from JSON OSM simulate() calls to allow later scriptResult conversion
-#'
-#' @return an S3 OSMResult instance
-#'
-#'  TODO update documentation here
-#'
-#' @details
-#'
-#' The class contains the following methods: \cr
-#' \itemize{
-#'
-#' \item \bold{AggregateResults()} \cr
-#' Aggregates results to return only the average value for all plots \cr
-#'
-#' }
-#'
-#' @export
-new_OSMResult <- function(resultJSON)
-{
-  me <- new.env(parent = emptyenv())
-  class(me) <- c("OSMResult")
-  me$dataSet <- read.csv(text = resultJSON$csvReport)
-  me$nbRealizations <- resultJSON$nbRealizations
-  me$nbPlots <- resultJSON$nbPlots
-  me$climateChangeScenario <- resultJSON$climateChangeScenario
-  me$growthModel <- resultJSON$growthModel
-
-  delayedAssign("AggregateResults",
-                function() {
-                  return (aggregate(Estimate~DateYr+timeSinceInitialDateYear+OutputType, me$dataSet, FUN="mean"))
-                },
-                assign.env = me)
-
-  return (me)
-}
