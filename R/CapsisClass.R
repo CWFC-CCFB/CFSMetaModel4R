@@ -224,9 +224,8 @@ new_CapsisClass <- function(host = "http://repicea.dynu.net") {
 
                   simResult <- NULL
 
-                  if (resultJSON$status == "COMPLETED")
-                  {
-                    simResult <- new_SimulationResult(resultJSON)
+                  if (resultJSON$status == "COMPLETED") {
+                    simResult <- new_SimulationResult(resultJSON$result)
                   } else if (resultJSON$status == "ERROR") {
                     return(list(code=resultJSON$status, result = resultJSON$errorMessage))
                   }

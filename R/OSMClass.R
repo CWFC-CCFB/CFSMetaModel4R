@@ -46,7 +46,7 @@
 #' }
 #'
 #' @export
-new_OSMClass <- function(host = "https://repicea.dynu.net") {
+new_OSMClass <- function(host = "http://repicea.dynu.net") {
   me <- new.env(parent = emptyenv())
   class(me) <- c("OSMClass")
   me$host <- host

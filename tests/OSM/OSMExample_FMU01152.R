@@ -32,7 +32,8 @@ if (!file.exists(MMFileName))
 
   outputRequestList <- new_OutputRequestList()
 
-  outputRequestList$addOutputRequest(outputRequestTypes$statusClass[[1]], outputRequestTypes$variable[[1]], list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved))
+  outputRequestList$addOutputRequest(paste0(outputRequestTypes$statusClass[[1]], outputRequestTypes$variable[[1]]),
+                                     list(Coniferous = speciesConiferous, Broadleaved = speciesBroadleaved))
 
   fmuList <- read.csv("./tests/OSM/FMU01152.csv")
 
@@ -40,6 +41,7 @@ if (!file.exists(MMFileName))
   {
     row <- fmuList[i,]
     fmuData <- read.csv(paste("./tests/OSM/", row$Filename, sep=""))
+    ##### TODO Bug here fix the output request type on Web API end MF20242025 ####
     df <- osm$Simulate(fmuData, outputRequestList, variant, 80, 5)
 
     metaModel$addScriptResult(row$initialAgeYr, df)

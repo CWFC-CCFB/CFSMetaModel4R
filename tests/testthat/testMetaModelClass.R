@@ -23,7 +23,7 @@ test_that("Produced the plot of fit", {
 pred <- metaModel$getPredictions(1:150,"PARAMEST")
 test_that("Predictions", {
   expect_equal(nrow(pred), 150)
-  expect_equal(pred[100,"Pred"], 141.69395080, tolerance = 1E-6)
+  expect_equal(pred[100,"Pred"], 135.52098595, tolerance = 1E-6)
 })
 
 lag <- metaModel$getRegenerationLagYrIfAny()

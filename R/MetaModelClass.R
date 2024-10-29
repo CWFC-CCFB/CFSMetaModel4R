@@ -215,8 +215,12 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                     }
                   }
                   message("Fitting candidate meta-models. This may take a while...")
-                  me$.metaModel$fitModel(outputType, linkedHashMapJava)
-                  return(invisible(NULL))
+                  returnMessage <- me$.metaModel$fitModel(outputType, linkedHashMapJava)
+                  if (startsWith(returnMessage, "ERROR")) {
+                    stop(returnMessage)
+                  } else {
+                    return(invisible(NULL))
+                  }
                 },
                 assign.env = me)
 
@@ -334,17 +338,13 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 }
 
 .prepareScriptResult <- function(simResults) {
-  if ("TotalVariance" %in% colnames(simResults$dataSet))
-  {
+  if ("TotalVariance" %in% colnames(simResults$dataSet))  {
     dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyDataSet")
-  }
-  else
-  {
+  } else {
     dataSet <- J4R::callJavaMethod("repicea.simulation.scriptapi.ScriptResult", "createEmptyReducedDataSet")
   }
 
-  for (i in 1:nrow(simResults$dataSet))
-  {
+  for (i in 1:nrow(simResults$dataSet))  {
     jarray <- J4R::createJavaObject("java.lang.Object", ncol(simResults$dataSet), isArray = TRUE)
     J4R::setValueInArray(jarray, as.character(simResults$dataSet[i,]))
     dataSet$addObservation(jarray)

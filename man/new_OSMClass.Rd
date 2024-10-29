@@ -4,7 +4,7 @@
 \alias{new_OSMClass}
 \title{Constructor for the OSMClass class.}
 \usage{
-new_OSMClass(host = "https://repicea.dynu.net")
+new_OSMClass(host = "http://repicea.dynu.net")
 }
 \arguments{
 \item{host}{the url of CAPSIS Web API (http://repicea.dynu.net by default)}

@@ -17,51 +17,32 @@ new_SimulationResult <- function(resultJSON) {
   me <- new.env(parent = emptyenv())
   class(me) <- c("SimulationResult")
 
-  me$mustAggregate <- FALSE
-  if (!is.null(resultJSON[["csvReport"]]))
-  {# OSM output
-    me$mustAggregate <- TRUE
+  if (resultJSON$growthModel == "Natura2014") { # Natura2014 output
+    me$dataSet <- resultJSON$dataSet
+  } else if (resultJSON$growthModel == "OSM") { # OSM output
     me$dataSet <- utils::read.csv(text = resultJSON$csvReport)
-
-    me$nbRealizations <- resultJSON$nbRealizations
-    me$nbPlots <- resultJSON$nbPlots
-    me$climateChangeScenario <- resultJSON$climateChangeScenario
-    me$growthModel <- resultJSON$growthModel
-    me$outputTypes <- resultJSON$outputTypes
-  }
-  else if (!is.null(resultJSON[["status"]]))
-  {# Capsis output
-    if (resultJSON$status == "COMPLETED")
-    {
-      me$dataSet <- data.frame(Reduce(rbind,resultJSON$result$dataset$observations$values))
-      colnames(me$dataSet) <- resultJSON$result$dataset$fieldNames
-      for (i in 1:length(resultJSON$result$dataset$fieldNames))
-      {
-        fieldType <- resultJSON$result$dataset$fieldTypes[[i]]
-        fieldName <-resultJSON$result$dataset$fieldNames[[i]]
-        if (fieldType == "java.lang.Integer")
-        {
-          me$dataSet[[fieldName]] = as.integer(me$dataSet[[fieldName]])
-        }
-        else if (fieldType == "java.lang.Double")
-        {
-          me$dataSet[[fieldName]] = as.numeric(me$dataSet[[fieldName]])
-        }
+    me$dataSet <- stats::aggregate(Estimate~DateYr+timeSinceInitialDateYear+OutputType, me$dataSet, FUN="mean")
+  } else if (resultJSON$growthModel %in% c("Artemis2009", "Artemis2014")) { # A Capsis output
+    me$dataSet <- data.frame(Reduce(rbind,resultJSON$dataset$observations$values))
+    colnames(me$dataSet) <- resultJSON$dataset$fieldNames
+    for (i in 1:length(resultJSON$dataset$fieldNames)) {
+      fieldType <- resultJSON$dataset$fieldTypes[[i]]
+      fieldName <-resultJSON$dataset$fieldNames[[i]]
+      if (fieldType == "java.lang.Integer") {
+        me$dataSet[[fieldName]] = as.integer(me$dataSet[[fieldName]])
+      } else if (fieldType == "java.lang.Double") {
+        me$dataSet[[fieldName]] = as.numeric(me$dataSet[[fieldName]])
       }
     }
-
-    me$nbRealizations <- resultJSON$result$nbRealizations
-    me$nbPlots <- resultJSON$result$nbPlots
-    me$climateChangeScenario <- resultJSON$result$climateChangeScenario
-    me$growthModel <- resultJSON$result$growthModel
-    me$outputTypes <- resultJSON$result$outputTypes
+  } else {
+    stop("The model ", resultJSON$growthModel, " is not recognized!")
   }
 
-  #aggregate results if needed
-  if (me$mustAggregate)
-  {
-    me$dataSet <- stats::aggregate(Estimate~DateYr+timeSinceInitialDateYear+OutputType, me$dataSet, FUN="mean")
-  }
+  me$nbRealizations <- as.integer(resultJSON$nbRealizations)
+  me$nbPlots <- as.integer(resultJSON$nbPlots)
+  me$climateChangeScenario <- resultJSON$climateChangeScenario
+  me$growthModel <- resultJSON$growthModel
+  me$outputTypes <- resultJSON$outputTypes
 
   return (me)
 }
