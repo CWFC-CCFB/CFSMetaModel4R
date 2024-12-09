@@ -123,6 +123,14 @@
 #' Provide a graph of the goodness of fit of the meta-model. \cr
 #' Return a ggplot2 graph
 #'
+#' \item \bold{convertToLightVersion(filename)} \cr
+#' Produce and save a light version of the meta-model. \cr
+#' Arguments are \cr
+#' \itemize{
+#' \item filename - The name of the file that will contain the meta-model instance
+#' }
+#' Return nothing
+#'
 #' \item \bold{plotChain} \cr
 #' Provide a graph of the loglikelihood of the different realizations of the
 #' final sample. \cr
@@ -163,6 +171,13 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 function(initialAge, scriptResult) {
                   scriptResultJava <- .prepareScriptResult(scriptResult)
                   me$.metaModel$addScriptResult(as.integer(initialAge), scriptResultJava)
+                  return(invisible(NULL))
+                },
+                assign.env = me)
+
+  delayedAssign("convertToLightVersion",
+                function(filename) {
+                  J4R::callJavaMethod("repicea.simulation.metamodel.MetaModel", "convertToLightVersion", filename)
                   return(invisible(NULL))
                 },
                 assign.env = me)
