@@ -169,6 +169,9 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
 
   delayedAssign("addScriptResult",
                 function(initialAge, scriptResult) {
+                  if (!"SimulationResult" %in% class(scriptResult)) {
+                    stop("The scriptResult argument should be an instance of the SimulationResult class available in the GYModelWebAPI4R package!")
+                  }
                   scriptResultJava <- .prepareScriptResult(scriptResult)
                   me$.metaModel$addScriptResult(as.integer(initialAge), scriptResultJava)
                   return(invisible(NULL))

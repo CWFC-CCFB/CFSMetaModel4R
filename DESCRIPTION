@@ -1,7 +1,7 @@
 Package: CFSMetaModel4R
 Type: Package
 Title: Allow to Fit Meta-Models From Existing Tree-Level Models
-Version: 1.7.0
+Version: 1.7.1
 Author: Jean-François Lavoie and Mathieu Fortin, Canadian Wood Fibre Centre, Canadian Forest Service
 Maintainer: Mathieu Fortin <mathieu.fortin.re@gmail.com>
 Copyright: His Majesty the King in right of Canada
@@ -13,10 +13,7 @@ Imports:
   ggplot2 (>= 3.3),
   J4R (>= 1.2.3),
   CFSMetaModelCommons4R (>= 1.0.0),
-  httr (>= 1.4.7),
-  jsonlite (>= 1.8.8),
-  stats (>= 4.3.2),
-  utils (>= 4.3.2)
+  jsonlite (>= 1.8.8)
 Remotes:
     CWFC-CCFB/J4R,
     CWFC-CCFB/CFSMetaModelCommons4R

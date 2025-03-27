@@ -2,8 +2,6 @@
 
 export(convertDataSet)
 export(convertPredictions)
-export(new_FVSClass)
-export(new_FVStandInfoDict)
 export(new_MetaModel)
 export(new_StartingValues)
 export(new_StartingValuesMap)
