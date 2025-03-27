@@ -2,12 +2,8 @@
 
 export(convertDataSet)
 export(convertPredictions)
-export(new_CapsisClass)
 export(new_FVSClass)
 export(new_FVStandInfoDict)
 export(new_MetaModel)
-export(new_OSMClass)
-export(new_OutputRequestList)
-export(new_SimulationResult)
 export(new_StartingValues)
 export(new_StartingValuesMap)
