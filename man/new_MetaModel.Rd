@@ -126,6 +126,7 @@ Arguments are \cr
 \itemize{
 \item outputType - One of the output types (see getPossibleOutputTypes())
 \item textsize - The font size (by default 20)
+\item title - The title of the graph, will use the outputType by default
 }
 Return nothing
 

@@ -116,6 +116,7 @@
 #' \itemize{
 #' \item outputType - One of the output types (see getPossibleOutputTypes())
 #' \item textsize - The font size (by default 20)
+#' \item title - The title of the graph, will use the outputType by default
 #' }
 #' Return nothing
 #'
@@ -290,14 +291,14 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                 assign.env = me)
 
   delayedAssign("plotOutputType",
-                function(outputType, textsize = 20) {
+                function(outputType, textsize = 20, title = NULL) {
                   if (!outputType %in% me$getPossibleOutputTypes()) {
                     stop(paste("The output type should be one of the following:", paste(me$getPossibleOutputTypes(), collapse=", ") ))
                   }
 
                   dataset <- convertDataSet(me$.metaModel$convertScriptResultsIntoDataSet())
                   dataset <- dataset[which(dataset$OutputType == outputType),]
-                  plot <- CFSMetaModelCommons4R::createGOFplot(dataObject = dataset, textsize = textsize)
+                  plot <- CFSMetaModelCommons4R::createGOFplot(dataObject = dataset, textsize = textsize, title = title)
                   return(plot)
                 },
                 assign.env = me)
