@@ -451,8 +451,27 @@ new_StartingValuesMap <- function() {
                   return(invisible(NULL))
                 },
                 assign.env = me)
+  delayedAssign("keepOnlyThese",
+                function(selectedCandidateModels) {
+                  if (!is.null(selectedCandidateModels) & length(selectedCandidateModels) > 0) {
+                    for (objName in ls(envir = me)) {
+                      o <- get(objName, envir = me, inherits = F)
+                      if (!is.function(o) & !objName %in% selectedCandidateModels) {
+                        message("Removing candidate model ", objName)
+                        rm(list = objName, envir = me, inherits = F)
+                      }
+                    }
+                  }
+                  for (objName in ls(envir = me)) {
+                    o <- get(objName, envir = me, inherits = F)
+                    if (is.character(o)) {
+                      return(invisible())
+                    }
+                  }
+                  stop("The StartingValuesMap object is inconsistent since there are no candidate models left in it!")
+                },
+                assign.env = me)
   return(me)
 }
-
 
 
