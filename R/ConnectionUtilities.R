@@ -61,7 +61,7 @@
 .connectToJ4R <- function() {
   if (!.checkIfProperlyConnectedToJ4R()) {
     rootPath <- system.file("java", package = "CFSMetaModel4R")
-    J4R::connectToJava(extensionPath = paste(rootPath, "*", sep="/"))
+    J4R::connectToJava(extensionPath = paste(rootPath, "*", sep="/"), addOpens = c("java.util.concurrent", "java.util"))
     J4RLogger <- J4R::getMainLoggerInstance()
     J4R::callJavaMethod("repicea.util.REpiceaLogManager", "setMainLogger", J4RLogger)
   }
