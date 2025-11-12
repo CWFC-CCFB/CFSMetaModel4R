@@ -198,7 +198,9 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                          randomGridSize = 10000,
                          nbBurnIn = 10000,
                          nbAcceptedRealizations = 500000 + nbBurnIn,
-                         oneEach = 50) {
+                         oneEach = 50,
+                         leftTrim = as.integer(0),
+                         rightTrim = as.integer(1000)) {
                   simParms <- me$.metaModel$getMetropolisHastingsParameters()
 
                   if (randomGridSize < 0) {
@@ -234,7 +236,7 @@ new_MetaModel <- function(stratumGroup, geoDomain, dataSource) {
                     }
                   }
                   message("Fitting candidate meta-models. This may take a while...")
-                  returnMessage <- me$.metaModel$fitModel(outputType, linkedHashMapJava)
+                  returnMessage <- me$.metaModel$fitModel(outputType, linkedHashMapJava, leftTrim, rightTrim)
                   if (startsWith(returnMessage, "ERROR")) {
                     stop(returnMessage)
                   } else {

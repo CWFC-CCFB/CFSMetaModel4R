@@ -12,7 +12,6 @@ metaModelFilename <- "QC_3EST_RS38_NoChange_AliveVolume_AllSpecies.zml"
 #metaModel$convertToLightVersion(metaModelFilename)
 metaModelLightFilename <- J4R::callJavaMethod("repicea.simulation.metamodel.MetaModel", "getLightVersionFilename", metaModelFilename)
 
-
 metaModel$load(metaModelFilename)
 hasConverged <- metaModel$hasConverged()
 test_that("MetaModel has converged", {
@@ -117,6 +116,5 @@ lag <- metaModel$getRegenerationLagYrIfAny()
 test_that("Regeneration lag", {
   expect_equal(lag, 8.868763446, tolerance = 1E-6)
 })
-
 
 J4R::shutdownClient()
