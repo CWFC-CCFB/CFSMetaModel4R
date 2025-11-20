@@ -30,7 +30,7 @@ test_that("Comparison yields something", {
 
 implementationList <- metaModel$getImplementationList()
 test_that("Testing nb of implementations", {
-  expect_equal(length(implementationList), 8)
+  expect_equal(length(implementationList), 10)
 })
 
 outputTypes <- metaModel$getPossibleOutputTypes()
@@ -84,7 +84,7 @@ test_that("Comparison yields something", {
 
 implementationList <- metaModel$getImplementationList()
 test_that("Testing nb of implementations", {
-  expect_equal(length(implementationList), 8)
+  expect_equal(length(implementationList), 10)
 })
 
 outputTypes <- metaModel$getPossibleOutputTypes()
