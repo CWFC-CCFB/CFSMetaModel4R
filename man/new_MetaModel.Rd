@@ -52,7 +52,10 @@ Return a vector of character strings
 randomGridSize = 10000,
 nbBurnIn = 10000,
 nbAcceptedRealizations = 500000 + nbBurnIn,
-oneEach = 50)} \cr
+oneEach = 50,
+leftTrim = as.integer(0),
+rightTrim = as.integer(1000),
+forceResidualVarianceEstimation = F)} \cr
 Fit a metamodel to a particular output type. \cr
 Arguments are \cr
 \itemize{
@@ -64,6 +67,10 @@ starting values for the parameters (0 to disable the grid)
 \item nbAcceptedRealizations - The number of realizations in the chain
 before filtering for the final sample
 \item onEach - The selection rate for the final sample
+\item leftTrim - Age below which the observations are not considered
+\item rightTrim - Age above which the observations are not considered
+\item forceResidualVarianceEstimation - A logical to force the residual
+variance estimation
 }
 Provide the parameter estimates in the console
 
